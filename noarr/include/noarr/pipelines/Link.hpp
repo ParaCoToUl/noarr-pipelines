@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "noarr/pipelines/Envelope.hpp"
+#include "noarr/pipelines/Node.hpp"
 
 namespace noarr {
 namespace pipelines {

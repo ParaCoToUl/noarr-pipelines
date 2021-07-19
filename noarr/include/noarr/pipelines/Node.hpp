@@ -1,6 +1,7 @@
 #ifndef NOARR_PIPELINES_NODE_HPP
 #define NOARR_PIPELINES_NODE_HPP
 
+#include <cassert>
 #include <string>
 #include <functional>
 
