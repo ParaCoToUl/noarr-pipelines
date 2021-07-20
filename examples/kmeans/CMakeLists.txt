@@ -13,7 +13,7 @@ find_package(Threads REQUIRED)
 
 # setup the test runner executable
 add_executable(kmeans kmeans.cpp)
-target_include_directories(kmeans PUBLIC ../../noarr/include)
+target_include_directories(kmeans PUBLIC ../../include)
 target_link_libraries(kmeans PRIVATE Threads::Threads)
 
 if(MSVC)

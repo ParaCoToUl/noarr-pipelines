@@ -1,8 +1,3 @@
-# editors
-/.vscode
-/.vs
-/.idea
-
 # CMake stuff
 CMakeLists.txt.user
 CMakeCache.txt
