@@ -14,7 +14,6 @@
 
 #include "Hub_Chunk.hpp"
 
-// TODO: handle committing race conditions + use scheduler thread
 // TODO: prevent parallel consuming in dataflow strategy
 
 namespace noarr {
