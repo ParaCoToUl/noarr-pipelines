@@ -5,6 +5,7 @@
 #include <map>
 #include <deque>
 #include <iostream>
+#include <thread>
 
 #include "Device.hpp"
 #include "Node.hpp"
@@ -99,6 +100,11 @@ private:
      * Links, to which data should flow
      */
     std::vector<Link_t*> dataflow_links;
+
+    /**
+     * Remembered scheduler thread id to check proper API calls
+     */
+    std::thread::id scheduler_thread_id;
 
 public:
     Hub(std::size_t buffer_size)
@@ -252,6 +258,8 @@ public:
      * initialization method
      */
     Envelope_t& push_new_chunk() {
+        guard_scheduler_thread();
+
         if (empty_envelopes[Device::HOST_INDEX].empty()) {
             assert(false && "No empty envelope available on the host");
         }
@@ -278,6 +286,8 @@ public:
      * finalization method
      */
     Envelope_t& peek_top_chunk() {
+        guard_scheduler_thread();
+
         if (chunk_queue.empty()) {
             assert(false && "The hub contains no chunks");
         }
@@ -299,6 +309,8 @@ public:
      * Removes the top chunk from the queue
      */
     void consume_top_chunk() {
+        guard_scheduler_thread();
+
         if (chunk_queue.empty()) {
             assert(false && "The hub contains no chunks");
         }
@@ -348,6 +360,9 @@ public:
 public:
 
     void initialize() override {
+        // remember the scheduler thread id
+        scheduler_thread_id = std::this_thread::get_id();
+        
         // try to infer dataflow if the user didn't specify an explicit one
         if (dataflow_links.empty() && !infer_dataflow())
             assert(false && "Dataflow is empty and cannot be infered. Define an explicit one.");
@@ -498,6 +513,8 @@ private:
     }
 
     void finish_producing_link_hosting(Link_t& link) {
+        guard_scheduler_thread();
+        
         // the production did happen, the envelope in the link is full of data
         if (link.was_committed) {
             // create a new chunk and push it into the queue
@@ -561,10 +578,16 @@ private:
     }
 
     void finish_top_chunk_hosting(Link_t& link, Chunk_t& top_chunk) {
+        guard_scheduler_thread();
+        
         // the consumption or modification did happen
         if (link.was_committed) {
             // the chunk was consumed
             if (link.type == LinkType::consuming) {
+                // make sure the top chunk is really the top chunk
+                if (chunk_queue.empty() || &top_chunk != chunk_queue[0])
+                    assert(false && "The same chunk was attempted to be consumed multiple times");
+                
                 // pop the chunk off the queue
                 consume_top_chunk();
             }
@@ -684,6 +707,16 @@ private:
         empty_envelopes[target].pop_back();
 
         return envelope;
+    }
+
+    /**
+     * Kills the program if we don't run in scheduler thread
+     */
+    void guard_scheduler_thread() {
+        assert(
+            scheduler_thread_id == std::this_thread::get_id()
+            && "Hub API methods may only be called from the scheduler thread"
+        );
     }
 
     ///////////////////////
