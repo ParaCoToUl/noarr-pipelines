@@ -15,8 +15,6 @@
 
 #include "Hub_Chunk.hpp"
 
-// TODO: prevent parallel consuming in dataflow strategy
-
 namespace noarr {
 namespace pipelines {
 
@@ -197,6 +195,26 @@ public:
                         && "Dataflow with multiple modifying links must have all of them on the same device."
                     );
                 }
+            }
+        }
+
+        // check that if we have a consuming link, there is no other consuming link
+        if (link.type == LinkType::consuming) {
+            for (Link_t* link_ptr : dataflow_links) {
+                Link_t& dataflow_link = *link_ptr;
+
+                assert(
+                    dataflow_link.type != LinkType::consuming
+                    && "There may only be one consuming link in the dataflow"
+                );
+
+                // NOTE: If you are running into this assert there are two options:
+                // 1) You should really be switching between two dataflow strategies
+                // where each one strategy uses only one consuming link.
+                // 2) You have a vaild usecase that we didn't think about, in which
+                // case you can remove this assert from the code. Just make sure
+                // you won't consume one chunk twice as that is detected later
+                // in the code and it will crash your program.
             }
         }
         
