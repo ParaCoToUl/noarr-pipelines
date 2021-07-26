@@ -42,3 +42,17 @@ cmake --build .
 On MFF gpulab, prefix all commands with `srun` to run them on slurm. And for
 cuda code, prefix with e.g. `srun -p volta-hp --gpus=1` to have a GPU available.
 More info here: https://gitlab.mff.cuni.cz/ksi/clusters
+
+
+## TODO
+
+- `[x]` docs: core principles
+- `[ ]` docs: compute node
+- `[ ]` docs: hub
+- `[ ]` cuda
+- `[ ]` kmeans example with cuda
+- `[ ]` docs: cuda pipelines
+- `[ ]` docs: hardware manager
+- `[ ]` python bindings template
+- `[ ]` R bindings template
+- `[ ]` some todo notes in the code and the docs, search for "TODO"

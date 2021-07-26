@@ -11,10 +11,9 @@ Here's the top-level structure of the entire documentation for Noarr. This is ho
     - `Advanced stuff (how it works, how to extend, etc...)`
 - Noarr Pipelines
     - `(detailed documentation of pipelines - placed in this repository, this folder)`
-    - Core principles
-        - `(pipeline processing more data than fits into memory, chunk stream, nodes, scheduler, scheduler thread, separation of concerns into compute nodes and hubs, data sharing via links)`
+    - [Core principles](core-principles.md)
     - Compute Node `(event methods, construction, async processing)`
-    - Hub `(envelopes, links, allocation, data transfer, dataflow strategy, direct manipulation)`
+    - [Hub](hub.md) `(envelopes, links, allocation, data transfer, dataflow strategy, direct manipulation)`
     - Cuda Pipelines `(cuda compute node + memory allocation)`
     - Hardware Manager and custom extensions
 - Examples
