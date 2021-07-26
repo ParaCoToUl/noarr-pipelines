@@ -47,7 +47,7 @@ More info here: https://gitlab.mff.cuni.cz/ksi/clusters
 ## TODO
 
 - `[x]` docs: core principles
-- `[ ]` docs: compute node
+- `[x]` docs: compute node
 - `[ ]` docs: hub
 - `[ ]` cuda
 - `[ ]` kmeans example with cuda
