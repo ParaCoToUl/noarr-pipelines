@@ -31,7 +31,7 @@ Chunks, that compute nodes work with, come from so called *hubs*. A hub can naiv
 
 A hub is actually not a single buffer but multiple, spread across multiple devices. This is because hub also provides inter-device memory transfer - e.g. one compute node can write to the hub from CPU and another one can read the data from GPU. One of these internal buffers is called an *envelope*. So a compute node accessing a hub through a link actually interacts only with a single envelope, not the entire hub.
 
-An envelope has two main parts: 1) the structure 2) the data. The structure tells the user what shape the data in the envelope has. It is the length for arrays, dimensions for images, etc... The data portion of the envelope contains a continuous binary blob of data that the user has to navigate through based on the structure. The envelope has a pre-allocated buffer with a specific size and the user data may never be larger that the allocated size.
+An envelope has two main parts: 1) the structure 2) the data. The structure tells the user what shape the data in the envelope has. It is the length for arrays, dimensions for images, etc... The data portion of the envelope contains a continuous binary blob of data that the user has to navigate through based on the structure. The envelope has a pre-allocated buffer with a specific size and the user data may never be larger that the allocated size. An envelope also has device it lives on. You can have one envelope in the GPU memory and another in the RAM.
 
 ```cpp
 // An example envelope containing an array of floats, where the structure of the
@@ -167,4 +167,6 @@ Apart from the link state and the attached envelope, the link also has additiona
 
 A link also has an *autocommit* flag that simply states that the action will be commited automatically when the envelope lending finishes. If this flag is set to `false`, the guest node has to manually call a `commit()` method before finishing the envelope lending.
 
-To learn more about the interplay, read the `Link.hpp` file and the `ComputeNode.hpp` file.
+The link also has an associated device, that specifies on which device should the hosted envelope exist.
+
+To learn more about the envelope hosting interplay, read the `Link.hpp` file and the `ComputeNode.hpp` file.

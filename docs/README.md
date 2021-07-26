@@ -10,10 +10,9 @@ Here's the top-level structure of the entire documentation for Noarr. This is ho
     - `Showcase of everything (how to use each feature)`
     - `Advanced stuff (how it works, how to extend, etc...)`
 - Noarr Pipelines
-    - `(detailed documentation of pipelines - placed in this repository, this folder)`
     - [Core principles](core-principles.md)
     - [Compute Node](compute-node.md)
-    - [Hub](hub.md) `(envelopes, links, allocation, data transfer, dataflow strategy, direct manipulation)`
+    - [Hub](hub.md)
     - Cuda Pipelines `(cuda compute node + memory allocation)`
     - Hardware Manager and custom extensions
 - Examples
