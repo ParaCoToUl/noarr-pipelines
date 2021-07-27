@@ -6,10 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 Include(FetchContent)
 
-# CUDA-related code taken from:
-# - https://developer.nvidia.com/blog/building-cuda-applications-cmake/
-# - https://stackoverflow.com/questions/48527238/linking-of-cuda-library-in-cmake
-
 # download testing library Catch2
 FetchContent_Declare(
   Catch2
@@ -27,17 +23,29 @@ find_package(CUDA 9.0 REQUIRED)
 file(GLOB_RECURSE tests_source_files CONFIGURE_DEPENDS
     "tests/*_test.hpp"
     "tests/*_test.cpp"
+    "tests/*.cu"
 )
 add_executable(test-runner main_test.cpp ${tests_source_files})
 target_include_directories(test-runner PUBLIC ../../include)
 target_link_libraries(test-runner PRIVATE Catch2::Catch2)
 target_link_libraries(test-runner PRIVATE Threads::Threads)
 target_link_libraries(test-runner PRIVATE ${CUDA_LIBRARIES})
+
+# https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#using-separate-compilation-in-cuda
 set_target_properties(test-runner PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
+# cuda architecture to compile against
+set_target_properties(test-runner PROPERTIES CUDA_ARCHITECTURES "35;50;72")
 
-if(MSVC)
-  target_compile_options(test-runner PRIVATE /W4)
-else()
-  target_compile_options(test-runner PRIVATE -Wall -Wextra -pedantic)
-endif()
+# make nvcc use C++ 17
+set_target_properties(test-runner PROPERTIES CUDA_STANDARD 17)
+
+
+# CANNOT BE PEDANTIC, because nvcc generates crappy C code and you get a ton of:
+# """warning: style of line directive is a GCC extension"""
+#
+# if(MSVC)
+#   target_compile_options(test-runner PRIVATE /W4)
+# else()
+#   target_compile_options(test-runner PRIVATE -Wall -Wextra -pedantic)
+# endif()
