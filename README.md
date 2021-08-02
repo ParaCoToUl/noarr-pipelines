@@ -49,7 +49,7 @@ More info here: https://gitlab.mff.cuni.cz/ksi/clusters
 - `[x]` docs: core principles
 - `[x]` docs: compute node
 - `[~]` docs: hub
-- `[ ]` cuda
+- `[x]` cuda
 - `[ ]` kmeans example with cuda
 - `[ ]` docs: cuda pipelines
 - `[ ]` docs: hardware manager

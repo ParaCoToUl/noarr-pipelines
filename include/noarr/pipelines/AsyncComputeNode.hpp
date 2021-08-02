@@ -24,7 +24,9 @@ public:
     // TODO: recycle a thread instead of starting a new one for each invocation,
     // that should help performance-wise
 
-    void __internal__advance() override {
+protected:
+
+    virtual void __internal__advance() override {
         ComputeNode::__internal__advance(); // call the standard "advance"
 
         // callback was already called in the "advance" method,
@@ -49,6 +51,11 @@ public:
         // to be started and if so, the user should .join() on them before returning)
         if (this->can_call_callback())
             this->callback();
+    }
+
+    virtual void advance() override {
+        // don't call callback here
+        // (the default node implementation does, we moved it to advance_async)
     }
 
     /**
