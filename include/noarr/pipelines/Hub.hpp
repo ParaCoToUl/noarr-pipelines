@@ -102,7 +102,7 @@ private:
     /**
      * Remembered scheduler thread id to check proper API calls
      */
-    std::thread::id scheduler_thread_id;
+    std::thread::id scheduler_thread_id = std::thread::id();
 
 public:
     Hub(std::size_t buffer_size)
@@ -433,6 +433,11 @@ public:
         }
     }
 
+    void terminate() override {
+        // forget the scheduler thread id
+        scheduler_thread_id = std::thread::id();
+    }
+
 private:
 
     /**
@@ -731,6 +736,10 @@ private:
      * Kills the program if we don't run in scheduler thread
      */
     void guard_scheduler_thread() {
+        // do not guard if the pipeline isn't running
+        if (scheduler_thread_id == std::thread::id())
+            return;
+        
         assert(
             scheduler_thread_id == std::this_thread::get_id()
             && "Hub API methods may only be called from the scheduler thread"
