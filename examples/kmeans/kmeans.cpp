@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <noarr/pipelines.hpp>
+#include <noarr/structures.hpp>
 
 using namespace noarr::pipelines;
 
@@ -139,7 +140,7 @@ void kmeans(
     }
 
     // setup scheduler
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(points_hub);
     scheduler.add(assignments_hub);
     scheduler.add(centroids_hub);
