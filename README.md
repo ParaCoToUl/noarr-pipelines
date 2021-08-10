@@ -28,8 +28,12 @@ target_link_libraries(<my-app> PRIVATE Threads::Threads)
 Enter the desired folder (e.g. `examples/kmeans`, `tests/pipelines`, ...). In the terminal (linux bash, windows cygwin or gitbash) run the following commands:
 
 ```sh
+# create and enter the folder that will contain the build files
+mkdir build
+cd build
+
 # generates build files for your platform
-cmake .
+cmake ..
 
 # builds the project using previously generated build files
 cmake --build .

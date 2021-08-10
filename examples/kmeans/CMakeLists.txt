@@ -29,6 +29,7 @@ set(NoarrStructuresIncludeDir ${source_dir}/noarr/include)
 # setup the test runner executable
 add_executable(kmeans kmeans.cpp)
 target_include_directories(kmeans PUBLIC ../../include)
+add_dependencies(kmeans noarr-structures)
 target_include_directories(kmeans PUBLIC ${NoarrStructuresIncludeDir})
 target_link_libraries(kmeans PRIVATE Threads::Threads)
 

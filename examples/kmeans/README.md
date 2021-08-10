@@ -18,8 +18,8 @@ Compile the example using cmake inside a folder called `cmake`:
 
 ```bash
 # create compilation folder and enter it
-mkdir cmake
-cd cmake
+mkdir build
+cd build
 
 # create build files
 cmake ..
