@@ -7,12 +7,10 @@
 #include <noarr/pipelines/Device.hpp>
 #include <noarr/pipelines/Buffer.hpp>
 #include <noarr/pipelines/HardwareManager.hpp>
-#include <noarr/pipelines/DebuggingScheduler.hpp>
-#include <noarr/pipelines/LambdaComputeNode.hpp>
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Memory transfer", "[pipelines][unit][memory_transfer]") {
+TEST_CASE("Memory sync transfer", "[pipelines][unit][memory_sync_transfer]") {
     auto& manager = HardwareManager::default_manager();
     manager.register_dummy_gpu();
     auto& transferer = manager.get_transferer(Device::HOST_INDEX, Device::DUMMY_GPU_INDEX);
@@ -27,32 +25,11 @@ TEST_CASE("Memory transfer", "[pipelines][unit][memory_transfer]") {
     src[1] = 2;
     src[2] = 3;
 
-    bool transfer_completed = false;
-
-    auto async_node = LambdaComputeNode(); {
-        async_node.can_advance([&](){
-            return !transfer_completed;
-        });
-
-        async_node.advance([&](){
-            transferer.transfer(
-                src_buffer.data_pointer,
-                dst_buffer.data_pointer,
-                1024,
-                [&async_node](){
-                    async_node.callback();
-                }
-            );
-        });
-
-        async_node.post_advance([&](){
-            transfer_completed = true;
-        });
-    }
-
-    DebuggingScheduler scheduler;
-    scheduler.add(async_node);
-    scheduler.run();
+    transferer.transfer_sync(
+        src_buffer.data_pointer,
+        dst_buffer.data_pointer,
+        1024
+    );
 
     // check the data was transfered
     REQUIRE(dst[0] == 1);
