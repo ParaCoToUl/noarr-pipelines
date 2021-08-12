@@ -6,6 +6,7 @@
 
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
+#include <noarr/structures-pipelines.hpp>
 
 #include "point_t.hpp"
 #include "utilities.cpp"
@@ -121,27 +122,29 @@ void kmeans(
             // tranfser points data to the points hub
             auto& points_envelope = points_hub.push_new_chunk();
             points_envelope.structure = PointList() | noarr::set_length<'i'>(given_points.size());
+            auto points_bag = bag_from_envelope(points_envelope);
             for (std::size_t i = 0; i < given_points.size(); ++i) {
-                point_t p = given_points[i];
-                points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 0) = p.x;
-                points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 1) = p.y;
+                points_bag.template at<'i', 'd'>(i, 0) = given_points[i].x;
+                points_bag.template at<'i', 'd'>(i, 1) = given_points[i].y;
             }
 
             // prepare initial centroids
             // (take first k input points)
             auto& centroids_envelope = centroids_hub.push_new_chunk();
             centroids_envelope.structure = PointList() | noarr::set_length<'i'>(k);
+            auto centroids_bag = bag_from_envelope(centroids_envelope);
             for (std::size_t i = 0; i < k; ++i) {
-                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0) = given_points[i].x;
-                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1) = given_points[i].y;
+                centroids_bag.template at<'i', 'd'>(i, 0) = given_points[i].x;
+                centroids_bag.template at<'i', 'd'>(i, 1) = given_points[i].y;
             }
 
             // put empty chunks into the remaining hubs
-            assignments_hub.push_new_chunk();
-            counts_hub.push_new_chunk();
-
             auto& sums_envelope = sums_hub.push_new_chunk();
             sums_envelope.structure = PointList() | noarr::set_length<'i'>(k);
+            
+            // these two hubs do not use the structure variable
+            assignments_hub.push_new_chunk();
+            counts_hub.push_new_chunk();
         });
 
         /**
@@ -156,30 +159,30 @@ void kmeans(
          * (this method runs in a background thread and does not block the scheduler)
          */
         iterator.advance_async([&](){
-            auto& points_envelope = *points_link.envelope;
+            auto points_bag = bag_from_link(points_link);
+            auto sums_bag = bag_from_link(sums_link);
+            auto centroids_bag = bag_from_link(centroids_link);
             auto assignments = assignments_link.envelope->buffer;
-            auto& centroids_envelope = *centroids_link.envelope;
-            auto& sums_envelope = *sums_link.envelope;
             auto counts = counts_link.envelope->buffer;
 
             // TODO: also turn into a kernel to avoid memory copying
             for (std::size_t i = 0; i < k; ++i) {
-                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 0) = 0;
-                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 1) = 0;
+                sums_bag.template at<'i', 'd'>(i, 0) = 0;
+                sums_bag.template at<'i', 'd'>(i, 1) = 0;
                 counts[i] = 0;
             }
 
             // TODO: this loop can be turned into a kernel and do all this on cuda
             for (std::size_t p = 0; p < given_points.size(); ++p) {
-                float px = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, p, 0);
-                float py = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, p, 1);
+                float px = points_bag.template at<'i', 'd'>(p, 0);
+                float py = points_bag.template at<'i', 'd'>(p, 1);
 
                 // get nearest centroid index
                 std::size_t nearest_centroid_index = -1;
                 float nearest_centroid_distance = std::numeric_limits<float>::infinity();
                 for (std::size_t c = 0; c < k; ++c) {
-                    float cx = centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, c, 0);
-                    float cy = centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, c, 1);
+                    float cx = centroids_bag.template at<'i', 'd'>(c, 0);
+                    float cy = centroids_bag.template at<'i', 'd'>(c, 1);
                     float dx = px - cx;
                     float dy = py - cy;
                     float distance = dx*dx + dy*dy;
@@ -190,18 +193,16 @@ void kmeans(
                 }
 
                 assignments[p] = nearest_centroid_index;
-                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, nearest_centroid_index, 0) += px;
-                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, nearest_centroid_index, 1) += py;
+                sums_bag.template at<'i', 'd'>(nearest_centroid_index, 0) += px;
+                sums_bag.template at<'i', 'd'>(nearest_centroid_index, 1) += py;
                 counts[nearest_centroid_index] += 1;
             }
 
             // TODO: also turn into a kernel to avoid memory copying
             for (std::size_t i = 0; i < k; ++i) {
                 if (counts[i] == 0) continue;	// If the cluster is empty, keep its previous centroid.
-                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0) =
-                    (sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 0)) / counts[i];
-                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1) =
-                    (sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 1)) / counts[i];
+                centroids_bag.template at<'i', 'd'>(i, 0) = sums_bag.template at<'i', 'd'>(i, 0) / counts[i];
+                centroids_bag.template at<'i', 'd'>(i, 1) = sums_bag.template at<'i', 'd'>(i, 1) / counts[i];
             }
         });
 
@@ -225,12 +226,11 @@ void kmeans(
         iterator.terminate([&](){
             // pull the final centroids out
             auto& centroids_envelope = centroids_hub.peek_top_chunk();
+            auto centroids_bag = bag_from_envelope(centroids_envelope);
             computed_centroids.resize(k);
             for (std::size_t i = 0; i < k; ++i) {
-                computed_centroids[i].x = centroids_envelope.structure
-                    | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0);
-                computed_centroids[i].y = centroids_envelope.structure
-                    | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1);
+                computed_centroids[i].x = centroids_bag.template at<'i', 'd'>(i, 0);
+                computed_centroids[i].y = centroids_bag.template at<'i', 'd'>(i, 1);
             }
 
             // pull the computed assignments out

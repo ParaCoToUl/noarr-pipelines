@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
         computed_centroids_aos,
         expected_centroids,
         computed_assignments_aos,
-        1.0f
+        1.0f // tolerance
     );
 
     std::cout << std::endl;
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
         computed_centroids_soa,
         expected_centroids,
         computed_assignments_soa,
-        1.0f
+        1.0f // tolerance
     );
 
     std::cout << std::endl;
