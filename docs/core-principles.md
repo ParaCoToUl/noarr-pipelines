@@ -65,7 +65,7 @@ auto producer = LambdaAsyncComputeNode(); {
         false // a chunk may sometimes not be produced - disable auto-commit
     ));
 
-    // when can the produer node be triggered?
+    // when can the producer node be triggered?
     producer.can_advance([&](){
         return !finished;
     });
