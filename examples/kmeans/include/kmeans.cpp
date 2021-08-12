@@ -13,33 +13,6 @@
 using namespace noarr::pipelines;
 
 /**
- * Computes the distance between two points (eukleidian squared)
- */
-static float distance(const point_t& point, const point_t& centroid) {
-    float dx = point.x - centroid.x;
-    float dy = point.y - centroid.y;
-    return (float)(dx*dx + dy*dy);
-}
-
-static std::size_t get_nearest_cluster(
-    const point_t& point,
-    const point_t* centroids,
-    std::size_t k
-) {
-    float minDist = distance(point, centroids[0]);
-    std::size_t nearest = 0;
-    for (std::size_t i = 1; i < k; ++i) {
-        float dist = distance(point, centroids[i]);
-        if (dist < minDist) {
-            minDist = dist;
-            nearest = i;
-        }
-    }
-
-    return nearest;
-}
-
-/**
  * Implements the naive kmeans algorithm using noarr pipelines and noarr structures
  * 
  * @param given_points: vector of points that we want to cluster
@@ -60,29 +33,60 @@ void kmeans(
     // so we will explicitly name the type of the sized point list structure
     using SizedPointList = decltype(PointList() | noarr::set_length<'i'>(0));
 
-    // TODO: try to use the bag wrapper when working with envelopes
-    // TODO: add structures to other hubs as well
 
     //////////////////////////
     // Define pipeline hubs //
     //////////////////////////
 
+    // NOTE: all hubs are configured to allocate the exact amount of memory that is needed,
+    // since we know exactly how big our input is
+
+    /**
+     * Holds input points that we cluster.
+     * 
+     * Uses noarr structures to represent the point list.
+     */
     auto points_hub = Hub<SizedPointList>(
         PointList() | noarr::set_length<'i'>(given_points.size()) | noarr::get_size()
     );
     points_hub.allocate_envelope(Device::HOST_INDEX);
     
-    auto assignments_hub = Hub<std::size_t, std::size_t>(sizeof(std::size_t) * given_points.size());
+    /**
+     * Holds assignments of input points to computed centroids
+     * (an assignment is a centroid index)
+     * 
+     * Does not use noarr structures, since it is a simple list of numbers.
+     * Therefore it does not use the "structure" variable of envelopes and so
+     * its type is set to void (void pointer, because void cannot be instantiated).
+     * Its buffer item type is set std::size_t because we will treat the buffer as an array.
+     */
+    auto assignments_hub = Hub<void*, std::size_t>(sizeof(std::size_t) * given_points.size());
     assignments_hub.allocate_envelope(Device::HOST_INDEX);
     
-    auto centroids_hub = Hub<std::size_t, point_t>(sizeof(point_t) * k);
+    /**
+     * Holds the list of centroid points, as they are refined
+     */
+    auto centroids_hub = Hub<SizedPointList>(
+        PointList() | noarr::set_length<'i'>(k) | noarr::get_size()
+    );
     centroids_hub.allocate_envelope(Device::HOST_INDEX);
     
-    auto sums_hub = Hub<std::size_t, point_t>(sizeof(point_t) * k);
+    /**
+     * Helper buffer that stores point position sums for each cluster
+     * to be later divided to obtain the centroid of a given cluster
+     */
+    auto sums_hub = Hub<SizedPointList>(
+        PointList() | noarr::set_length<'i'>(k) | noarr::get_size()
+    );
     sums_hub.allocate_envelope(Device::HOST_INDEX);
     
-    auto counts_hub = Hub<std::size_t, std::size_t>(sizeof(std::size_t) * k);
+    /**
+     * Helper buffer that stores point count for each cluster
+     * to be used during centroid computation
+     */
+    auto counts_hub = Hub<void*, std::size_t>(sizeof(std::size_t) * k);
     counts_hub.allocate_envelope(Device::HOST_INDEX);
+
 
     ///////////////////////////////////
     // Define pipeline compute nodes //
@@ -101,16 +105,22 @@ void kmeans(
     // a nested code block to define the iterator compute node
     // (the code block is only here for the readablity and is not needed)
     {
+        // we define all the links to all the hubs
+        // the iterator compute node may only be advanced if there are chunks present in all of these hubs
         auto& points_link = iterator.link(points_hub.to_peek(Device::HOST_INDEX));
         auto& assignments_link = iterator.link(assignments_hub.to_modify(Device::HOST_INDEX));
         auto& centroids_link = iterator.link(centroids_hub.to_modify(Device::HOST_INDEX));
         auto& sums_link = iterator.link(sums_hub.to_modify(Device::HOST_INDEX));
         auto& counts_link = iterator.link(counts_hub.to_modify(Device::HOST_INDEX));
 
+        /**
+         * Before the pipeline starts running, put initial data into all hubs
+         * (the initialization event method of the iterator compute node is convenient place to put this logic)
+         */
         iterator.initialize([&](){
-            // tranfser points data to the hub
+            // tranfser points data to the points hub
             auto& points_envelope = points_hub.push_new_chunk();
-            points_envelope.structure = points_envelope.structure | noarr::set_length<'i'>(given_points.size());
+            points_envelope.structure = PointList() | noarr::set_length<'i'>(given_points.size());
             for (std::size_t i = 0; i < given_points.size(); ++i) {
                 point_t p = given_points[i];
                 points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 0) = p.x;
@@ -118,9 +128,13 @@ void kmeans(
             }
 
             // prepare initial centroids
-            auto centroids = centroids_hub.push_new_chunk().buffer;
-            for (std::size_t i = 0; i < k; ++i)
-                centroids[i] = given_points[i];
+            // (take first k input points)
+            auto& centroids_envelope = centroids_hub.push_new_chunk();
+            centroids_envelope.structure = PointList() | noarr::set_length<'i'>(k);
+            for (std::size_t i = 0; i < k; ++i) {
+                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0) = given_points[i].x;
+                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1) = given_points[i].y;
+            }
 
             // put empty chunks into the remaining hubs
             assignments_hub.push_new_chunk();
@@ -135,55 +149,95 @@ void kmeans(
             return finished_refinements < refinements;
         });
 
+        /**
+         * Definition of the "advance" method. It implements one refinement iteration of kmeans.
+         * (this method runs in a background thread and does not block the scheduler)
+         */
         iterator.advance_async([&](){
             auto& points_envelope = *points_link.envelope;
             auto assignments = assignments_link.envelope->buffer;
-            auto centroids = centroids_link.envelope->buffer;
-            auto sums = sums_link.envelope->buffer;
+            auto& centroids_envelope = *centroids_link.envelope;
+            auto& sums_envelope = *sums_link.envelope;
             auto counts = counts_link.envelope->buffer;
 
+            // TODO: also turn into a kernel to avoid memory copying
             for (std::size_t i = 0; i < k; ++i) {
-                sums[i].x = sums[i].y = 0;
+                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 0) = 0;
+                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 1) = 0;
                 counts[i] = 0;
             }
 
             // TODO: this loop can be turned into a kernel and do all this on cuda
-            point_t point;
-            for (std::size_t i = 0; i < given_points.size(); ++i) {
-                point.x = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 0);
-                point.y = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 1);
+            for (std::size_t p = 0; p < given_points.size(); ++p) {
+                float px = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, p, 0);
+                float py = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, p, 1);
 
-                std::size_t nearest = get_nearest_cluster(point, centroids, k);
-                assignments[i] = nearest;
-                sums[nearest].x += point.x;
-                sums[nearest].y += point.y;
-                ++counts[nearest];
+                // get nearest centroid index
+                std::size_t nearest_centroid_index = -1;
+                float nearest_centroid_distance = std::numeric_limits<float>::infinity();
+                for (std::size_t c = 0; c < k; ++c) {
+                    float cx = centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, c, 0);
+                    float cy = centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, c, 1);
+                    float dx = px - cx;
+                    float dy = py - cy;
+                    float distance = dx*dx + dy*dy;
+                    if (distance < nearest_centroid_distance) {
+                        nearest_centroid_distance = distance;
+                        nearest_centroid_index = c;
+                    }
+                }
+
+                assignments[p] = nearest_centroid_index;
+                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, nearest_centroid_index, 0) += px;
+                sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, nearest_centroid_index, 1) += py;
+                counts[nearest_centroid_index] += 1;
             }
 
+            // TODO: also turn into a kernel to avoid memory copying
             for (std::size_t i = 0; i < k; ++i) {
                 if (counts[i] == 0) continue;	// If the cluster is empty, keep its previous centroid.
-                centroids[i].x = sums[i].x / counts[i];
-                centroids[i].y = sums[i].y / counts[i];
+                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0) =
+                    (sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 0)) / counts[i];
+                centroids_envelope.structure | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1) =
+                    (sums_envelope.structure | noarr::get_at<'i', 'd'>(sums_envelope.buffer, i, 1)) / counts[i];
             }
         });
 
+        /**
+         * When the advancement finishes, increment the number of refinements done
+         * (this method is executed by the scheduler thread again)
+         */
         iterator.post_advance([&](){
             // one additional refinement has just finished
             finished_refinements += 1;
+
+            // NOTE: we could do this in the advance method, but since we access a global
+            // variable (possibly accessed by other nodes in the future) it is safer
+            // to do it here (in the scheduler thread) to prevent race conditions
         });
 
+        /**
+         * When the pipeline terminates, we pull the data from hubs and put it into the output parameters
+         * (the termiante event method of our iterator compute node is a convenient place to put this logic)
+         */
         iterator.terminate([&](){
             // pull the final centroids out
-            auto centroids = centroids_hub.peek_top_chunk().buffer;
+            auto& centroids_envelope = centroids_hub.peek_top_chunk();
             computed_centroids.resize(k);
-            memcpy(&computed_centroids[0], centroids, sizeof(point_t) * k);
+            for (std::size_t i = 0; i < k; ++i) {
+                computed_centroids[i].x = centroids_envelope.structure
+                    | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 0);
+                computed_centroids[i].y = centroids_envelope.structure
+                    | noarr::get_at<'i', 'd'>(centroids_envelope.buffer, i, 1);
+            }
 
-            // assignments are pulled the same way
+            // pull the computed assignments out
             auto assignments = assignments_hub.peek_top_chunk().buffer;
             computed_assignments.resize(given_points.size());
             memcpy(&computed_assignments[0], assignments, sizeof(std::size_t) * given_points.size());
         });
     }
+
 
     ////////////////////////////////////////////////
     // Set up the scheduler and run to completion //
