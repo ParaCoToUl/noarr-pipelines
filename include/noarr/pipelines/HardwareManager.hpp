@@ -112,6 +112,29 @@ public:
         );
     }
 
+    /**
+     * Transfers data between two buffers synchronously.
+     */
+    void transfer_data_sync(
+        const Buffer& from,
+        const Buffer& to,
+        std::size_t bytes
+    ) {
+        assert(bytes <= from.bytes && "Transfering too many bytes");
+        assert(bytes <= to.bytes && "Transfering too many bytes");
+
+        MemoryTransferer& transferer = get_transferer(
+            from.device_index,
+            to.device_index
+        );
+
+        transferer.transfer_sync(
+            from.data_pointer,
+            to.data_pointer,
+            bytes
+        );
+    }
+
     /////////////////////
     // Lower-level API //
     /////////////////////

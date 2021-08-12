@@ -321,8 +321,16 @@ public:
 
         // check that it's present on the host
         if (top_chunk.envelopes.count(from_device) == 0) {
-            // TODO: do a synchronous copy, maybe?
-            assert(false && "The latest chunk is not present on the device");
+            // copy the envelope synchronously to the requested device
+            Envelope_t& target_env = obtain_envelope_for_transfer(from_device);
+            Envelope_t& source_env = top_chunk.get_source_for_transfer(from_device);
+            top_chunk.envelopes[from_device] = &target_env;
+            target_env.structure = source_env.structure;
+            hardware_manager.transfer_data_sync(
+                source_env.allocated_buffer_instance,
+                target_env.allocated_buffer_instance,
+                buffer_size
+            );
         }
 
         // return reference to the envelope
