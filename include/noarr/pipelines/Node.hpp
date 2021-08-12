@@ -19,7 +19,7 @@ public:
 
     Node(const std::string& label) : label(label) { }
 
-    virtual ~Node() = default;
+    virtual ~Node() noexcept = default;
 
     ///////////////////
     // Scheduler API //

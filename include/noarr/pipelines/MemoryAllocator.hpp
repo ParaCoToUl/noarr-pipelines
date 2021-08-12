@@ -16,7 +16,7 @@ namespace pipelines {
  */
 class MemoryAllocator {
 public:
-    virtual ~MemoryAllocator() = default;
+    virtual ~MemoryAllocator() noexcept = default;
 
     /**
      * Returns the device index, for which this allocator allocates

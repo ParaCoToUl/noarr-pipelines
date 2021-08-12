@@ -23,7 +23,7 @@ public:
     /**
      * Transfers memory between
      */
-    virtual ~MemoryTransferer() = default;
+    virtual ~MemoryTransferer() noexcept = default;
 
     virtual void transfer(
         void* from,
