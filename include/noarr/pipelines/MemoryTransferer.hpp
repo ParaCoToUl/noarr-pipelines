@@ -17,6 +17,8 @@ namespace pipelines {
  */
 class MemoryTransferer {
 public:
+    virtual ~MemoryTransferer() = default;
+
     virtual void transfer(
         void* from,
         void* to,
