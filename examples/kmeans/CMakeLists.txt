@@ -27,7 +27,8 @@ ExternalProject_Get_Property(noarr-structures source_dir)
 set(NoarrStructuresIncludeDir ${source_dir}/noarr/include)
 
 # setup the test runner executable
-add_executable(kmeans kmeans.cpp)
+add_executable(kmeans main.cpp)
+target_include_directories(kmeans PUBLIC ./include)
 target_include_directories(kmeans PUBLIC ../../include)
 add_dependencies(kmeans noarr-structures)
 target_include_directories(kmeans PUBLIC ${NoarrStructuresIncludeDir})

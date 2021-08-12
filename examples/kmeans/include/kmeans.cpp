@@ -1,16 +1,10 @@
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <vector>
-#include <random>
 #include <noarr/pipelines.hpp>
 #include <noarr/structures.hpp>
 
-using namespace noarr::pipelines;
+#include "point_t.hpp"
+#include "utilities.cpp"
 
-struct point_t {
-    float x, y;
-};
+using namespace noarr::pipelines;
 
 /**
  * Computes the distance between two points (eukleidian squared)
@@ -39,11 +33,19 @@ static std::size_t get_nearest_cluster(
     return nearest;
 }
 
+/**
+ * Implements the naive kmeans algorithm using noarr pipelines and noarr structures
+ * 
+ * @param given_points: vector of points that we want to cluster
+ * @param k: number of centroids to cluster into
+ * @param refinements: number of refinements (iterations) of the algorithm to perform
+ * @param computed_centroids: here, the computed centroids will be written
+ */
 void kmeans(
     const std::vector<point_t>& given_points,
     std::size_t k,
     std::size_t refinements,
-    std::vector<point_t>& computed_centroids // output
+    std::vector<point_t>& computed_centroids
 ) {
     // hubs
     auto points_hub = Hub<std::size_t, point_t>(sizeof(point_t) * given_points.size());
@@ -139,7 +141,7 @@ void kmeans(
         });
     }
 
-    // setup scheduler
+    // setup pipeline scheduler (give it all pipeline nodes)
     DebuggingScheduler scheduler;
     scheduler.add(points_hub);
     scheduler.add(assignments_hub);
@@ -148,77 +150,6 @@ void kmeans(
     scheduler.add(counts_hub);
     scheduler.add(iterator);
 
-    // run
+    // run the pipeline to completion
     scheduler.run();
-}
-
-
-//////////////////
-// Support code //
-//////////////////
-
-float random_float_between(float a, float b) {
-    float random = ((float) rand()) / (float) RAND_MAX;
-    float diff = b - a;
-    float r = random * diff;
-    return a + r;
-}
-
-void generate_random_points(
-    const std::vector<point_t>& centroids,
-    std::size_t count,
-    float centroid_dispersion,
-    std::vector<point_t>& generated_points // output
-) {
-    generated_points.clear();
-
-    for (std::size_t i = 0; i < count; ++i) {
-        point_t p = centroids[rand() % centroids.size()];
-        p.x += random_float_between(-centroid_dispersion, centroid_dispersion);
-        p.y += random_float_between(-centroid_dispersion, centroid_dispersion);
-        generated_points.push_back(p);
-    }
-}
-
-void print_points(const std::vector<point_t>& points) {
-    for (const point_t& c : points) {
-        std::cout << std::setfill(' ') << std::setw(10)
-            << std::fixed << std::setprecision(2) << c.x;
-        std::cout << ", ";
-        std::cout << std::setfill(' ') << std::setw(10)
-            << std::fixed << std::setprecision(2) << c.y;
-        std::cout << std::endl;
-    }
-}
-
-int main() {
-    const std::size_t REFINEMENTS = 1000;
-    const std::size_t TOTAL_POINTS = 10000;
-    const float CENTROID_DISPERSION = 20.0f;
-
-    srand(time(NULL));
-
-    std::vector<point_t> points;
-    std::vector<point_t> expected_centroids = {{0, 0}, {1000, 1000}, {-1000, -2000}};
-    std::vector<point_t> computed_centroids;
-
-    std::cout << "Generating points..." << std::endl;
-    generate_random_points(
-        expected_centroids,
-        TOTAL_POINTS,
-        CENTROID_DISPERSION,
-        points
-    );
-
-    std::cout << "Running kmeans..." << std::endl;
-    kmeans(points, expected_centroids.size(), REFINEMENTS, computed_centroids);
-
-    std::cout << "Done." << std::endl << std::endl;
-
-    std::cout << "Expected centroids:" << std::endl;
-    print_points(expected_centroids);
-    std::cout << "Computed centroids:" << std::endl;
-    print_points(computed_centroids);
-
-    return 0;
 }
