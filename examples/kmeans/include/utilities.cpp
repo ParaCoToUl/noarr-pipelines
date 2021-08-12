@@ -149,10 +149,11 @@ void validate_kmeans_output(
 
     std::cout << std::endl;
 
-    std::cout << "Expected centroids:" << std::endl;
+    std::cout << "Expected centroids (X Y coordinates):" << std::endl;
     utilities::print_points(expected_centroids);
-    std::cout << "Computed centroids:" << std::endl;
+    std::cout << "Computed centroids (X Y coordinates):" << std::endl;
     utilities::print_points(computed_centroids);
+    std::cout << "Order of centroids does not matter." << std::endl;
 
     std::cout << std::endl;
 

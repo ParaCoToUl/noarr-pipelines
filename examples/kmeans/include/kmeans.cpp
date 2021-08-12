@@ -138,8 +138,10 @@ void kmeans(
 
             // put empty chunks into the remaining hubs
             assignments_hub.push_new_chunk();
-            sums_hub.push_new_chunk();
             counts_hub.push_new_chunk();
+
+            auto& sums_envelope = sums_hub.push_new_chunk();
+            sums_envelope.structure = PointList() | noarr::set_length<'i'>(k);
         });
 
         /**
