@@ -1,3 +1,9 @@
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <vector>
+#include <chrono>
+
 #include <noarr/pipelines.hpp>
 #include <noarr/structures.hpp>
 
@@ -40,18 +46,23 @@ static std::size_t get_nearest_cluster(
  * @param k: number of centroids to cluster into
  * @param refinements: number of refinements (iterations) of the algorithm to perform
  * @param computed_centroids: here, the computed centroids will be written
+ * @param computed_assignments: here, the computed assignemnts will be written (cluster indices for each input point)
  */
 void kmeans(
     const std::vector<point_t>& given_points,
     std::size_t k,
     std::size_t refinements,
-    std::vector<point_t>& computed_centroids
+    std::vector<point_t>& computed_centroids,
+    std::vector<std::size_t>& computed_assignments
 ) {
-    // hubs
+    //////////////////////////
+    // Define pipeline hubs //
+    //////////////////////////
+
     auto points_hub = Hub<std::size_t, point_t>(sizeof(point_t) * given_points.size());
     points_hub.allocate_envelope(Device::HOST_INDEX);
     
-    auto assignments_hub = Hub<std::size_t, std::uint8_t>(sizeof(std::uint8_t) * given_points.size());
+    auto assignments_hub = Hub<std::size_t, std::size_t>(sizeof(std::size_t) * given_points.size());
     assignments_hub.allocate_envelope(Device::HOST_INDEX);
     
     auto centroids_hub = Hub<std::size_t, point_t>(sizeof(point_t) * k);
@@ -66,12 +77,23 @@ void kmeans(
     // SIDENOTE: envelopes have not only buffers but also structure, but since
     // we know all the sizes and layout in advance, we don't use it
 
-    // global state
+    ///////////////////////////////////
+    // Define pipeline compute nodes //
+    ///////////////////////////////////
+
+    /**
+     * Tracks the finished refinements so that we know when to stop the algorithm
+     */
     std::size_t finished_refinements = 0;
 
+    /**
+     * The compute node that will compute one iteration of the algorithm each time it is advanced
+     */
     auto iterator = LambdaAsyncComputeNode("iterator");
 
-    /* iterator */ {
+    // a nested code block to define the iterator compute node
+    // (the code block is only here for the readablity and is not needed)
+    {
         auto& points_link = iterator.link(points_hub.to_peek(Device::HOST_INDEX));
         auto& assignments_link = iterator.link(assignments_hub.to_modify(Device::HOST_INDEX));
         auto& centroids_link = iterator.link(centroids_hub.to_modify(Device::HOST_INDEX));
@@ -94,6 +116,9 @@ void kmeans(
             counts_hub.push_new_chunk();
         });
 
+        /**
+         * The iterator can be advanced as long as we have not finished all the refinements yet
+         */
         iterator.can_advance([&](){
             return finished_refinements < refinements;
         });
@@ -137,9 +162,16 @@ void kmeans(
             computed_centroids.resize(k);
             memcpy(&computed_centroids[0], centroids, sizeof(point_t) * k);
 
-            // TODO: assignments could be pulled the same way
+            // assignments are pulled the same way
+            auto assignments = assignments_hub.peek_top_chunk().buffer;
+            computed_assignments.resize(given_points.size());
+            memcpy(&computed_assignments[0], assignments, sizeof(std::size_t) * given_points.size());
         });
     }
+
+    ////////////////////////////////////////////////
+    // Set up the scheduler and run to completion //
+    ////////////////////////////////////////////////
 
     // setup pipeline scheduler (give it all pipeline nodes)
     DebuggingScheduler scheduler;
@@ -150,6 +182,20 @@ void kmeans(
     scheduler.add(counts_hub);
     scheduler.add(iterator);
 
+    std::cout << "Running kmeans in AoS mode" << std::endl;
+    std::cout << "==========================" << std::endl;
+    std::cout << "Refinements: " << refinements << std::endl;
+    std::cout << "Running..." << std::endl;
+
+    std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+
     // run the pipeline to completion
     scheduler.run();
+
+    std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+
+    std::cout << "Done." << std::endl;
+    std::cout << "Kmeans executed in " <<
+        std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() <<
+        " milliseconds." << std::endl;
 }

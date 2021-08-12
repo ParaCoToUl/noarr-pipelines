@@ -65,6 +65,100 @@ void print_points(const std::vector<point_t>& points) {
     }
 }
 
+/**
+ * Computes the squared distance between two points
+ */
+float squared_distance(point_t a, point_t b) {
+    float dx = a.x - b.x;
+    float dy = a.y - b.y;
+    return dx*dx + dy*dy;
+}
+
+/**
+ * Computes the mean squared distance between two sets of centroids
+ * (the verification metric)
+ */
+float get_centroids_mean_squared_distance(
+    const std::vector<point_t>& computed_centroids,
+    const std::vector<point_t>& expected_centroids
+) {
+    // makes sure each expected centroid has a close corresponding
+    // centroid in the computed centroids
+
+    assert(expected_centroids.size() == computed_centroids.size());
+    assert(expected_centroids.size() >= 1);
+
+    float total_distance = 0.0f;
+    for (point_t expected : expected_centroids) {
+        float closest = std::numeric_limits<float>::infinity();
+        for (point_t computed : computed_centroids) {
+            float dist = squared_distance(expected, computed);
+            if (dist < closest)
+                closest = dist;
+        }
+        total_distance += closest;
+    }
+
+    return total_distance / expected_centroids.size();
+}
+
+/**
+ * Counts up how many points are assigned to what centroid and prints the result
+ */
+void print_assignments_histogram(std::size_t k, const std::vector<std::size_t>& assignments) {
+    std::vector<std::size_t> counts(k, 0);
+
+    for (std::size_t assignment : assignments) {
+        counts[assignment] += 1;
+    }
+
+    std::cout << "Number of points assigned to computed centroids:" << std::endl;
+    for (std::size_t i = 0; i < k; ++i) {
+        std::cout << " " << counts[i];
+    }
+    std::cout << std::endl;
+}
+
+/**
+ * Checks that the computed centroids are close enough to expected centroids
+ * and prints additional information to the standard output
+ */
+void validate_kmeans_output(
+    const std::vector<point_t>& computed_centroids,
+    const std::vector<point_t>& expected_centroids,
+    const std::vector<std::size_t>& computed_assignments,
+    float success_threshold
+) {
+    float distance = get_centroids_mean_squared_distance(computed_centroids, expected_centroids);
+
+    std::cout << "Average centroid distance: " << distance <<
+        " compared to threshold: " << success_threshold << std::endl;
+
+    if (distance < success_threshold) {
+        std::cout << "-----------" << std::endl;
+        std::cout << "- SUCCESS -" << std::endl;
+        std::cout << "-----------" << std::endl;
+    } else {
+        std::cout << "@@@@@@@@@@@" << std::endl;
+        std::cout << "@  ERROR  @" << std::endl;
+        std::cout << "@@@@@@@@@@@" << std::endl;
+        std::cout << "=> Centroids were found incorrectly." << std::endl;
+        std::cout << "But this might be due to unlucky choice of initial centroids." <<
+            " Try running the example again to be sure." << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    std::cout << "Expected centroids:" << std::endl;
+    utilities::print_points(expected_centroids);
+    std::cout << "Computed centroids:" << std::endl;
+    utilities::print_points(computed_centroids);
+
+    std::cout << std::endl;
+
+    print_assignments_histogram(computed_centroids.size(), computed_assignments);
+}
+
 } // namespace utilities
 
 #endif

@@ -16,8 +16,24 @@
 int main(int argc, char* argv[]) {
 
     /*
+        Step 0)
+        Parse arguments.
+     */
+
+    std::size_t total_points = 10 * 1000;
+    std::size_t refinements = 1 * 1000;
+
+    if (argc >= 2) {
+        total_points = std::atoi(argv[1]);
+    }
+
+    if (argc >= 3) {
+        refinements = std::atoi(argv[2]);
+    }
+
+    /*
         Step 1)
-        Generate three clusters of 10K points in total.
+        Generate three clusters of points.
         Remember the expected centroids of these clusters for later comparison.
      */
     
@@ -25,7 +41,7 @@ int main(int argc, char* argv[]) {
     std::vector<point_t> expected_centroids = {{0, 0}, {1000, 1000}, {-1000, -2000}};
     utilities::generate_random_points(
         expected_centroids, // which places to cluster points around
-        10000, // total points
+        total_points, // total points
         20.0f, // how much to disperse around each centroid
         points // what veriable to write the points to
     );
@@ -35,23 +51,49 @@ int main(int argc, char* argv[]) {
     /*
         Step 2)
         Run kmeans in AoS mode.
+        Validate its output.
      */
 
-    // TODO .......
-
-    std::cout << "Running kmeans..." << std::endl;
-    const std::size_t REFINEMENTS = 1000;
-    std::vector<point_t> computed_centroids;
-    kmeans(points, expected_centroids.size(), REFINEMENTS, computed_centroids);
-
-    std::cout << "Done." << std::endl;
+    std::vector<point_t> computed_centroids_aos;
+    std::vector<std::size_t> computed_assignments_aos;
+    
+    // TODO: specify the AoS parameter
+    kmeans(
+        points, // input points
+        expected_centroids.size(), // k (number of clusters)
+        refinements, // number of algorithm iterations to compute
+        computed_centroids_aos, // what variable to write the centroids to
+        computed_assignments_aos // what variable to write the assignemnts to
+    );
 
     std::cout << std::endl;
 
-    std::cout << "Expected centroids:" << std::endl;
-    utilities::print_points(expected_centroids);
-    std::cout << "Computed centroids:" << std::endl;
-    utilities::print_points(computed_centroids);
+    utilities::validate_kmeans_output(
+        computed_centroids_aos,
+        expected_centroids,
+        computed_assignments_aos,
+        1.0f
+    );
+
+    std::cout << std::endl;
+
+    /*
+        Step 3)
+        Run kmeans in SoA mode.
+        Validate its output.
+     */
+
+    // TODO
+
+    std::cout << std::endl;
+
+    /*
+        Step 4)
+        Print advanced usage.
+     */
+
+    std::cout << "You can customize the behavior in future runs by providing arguments:" << std::endl;
+    std::cout << "kmeans [total_points] [refinements]" << std::endl;
 
     return 0;
 }
