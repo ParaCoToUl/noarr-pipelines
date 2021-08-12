@@ -7,6 +7,9 @@
 // (part of the public API of the kmeans algorithm)
 #include "point_t.hpp"
 
+// noarr structures used by the kmeans implementation
+#include "structures.hpp"
+
 // the kmeans algorithm
 #include "kmeans.cpp"
 
@@ -57,8 +60,7 @@ int main(int argc, char* argv[]) {
     std::vector<point_t> computed_centroids_aos;
     std::vector<std::size_t> computed_assignments_aos;
     
-    // TODO: specify the AoS parameter
-    kmeans(
+    kmeans<PointListAoS>(
         points, // input points
         expected_centroids.size(), // k (number of clusters)
         refinements, // number of algorithm iterations to compute
@@ -83,7 +85,25 @@ int main(int argc, char* argv[]) {
         Validate its output.
      */
 
-    // TODO
+    std::vector<point_t> computed_centroids_soa;
+    std::vector<std::size_t> computed_assignments_soa;
+    
+    kmeans<PointListSoA>(
+        points, // input points
+        expected_centroids.size(), // k (number of clusters)
+        refinements, // number of algorithm iterations to compute
+        computed_centroids_soa, // what variable to write the centroids to
+        computed_assignments_soa // what variable to write the assignemnts to
+    );
+
+    std::cout << std::endl;
+
+    utilities::validate_kmeans_output(
+        computed_centroids_soa,
+        expected_centroids,
+        computed_assignments_soa,
+        1.0f
+    );
 
     std::cout << std::endl;
 

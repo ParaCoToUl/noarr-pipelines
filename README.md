@@ -60,8 +60,3 @@ More info here: https://gitlab.mff.cuni.cz/ksi/clusters
 - `[ ]` python bindings template
 - `[ ]` R bindings template
 - `[ ]` some todo notes in the code and the docs, search for "TODO"
-
-
-## In noarr documentation I'm mising
-
-- `get_size` ... size of the data underlying the structure in bytes
