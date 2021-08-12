@@ -12,6 +12,7 @@
 #include "Link.hpp"
 #include "Buffer.hpp"
 #include "HardwareManager.hpp"
+#include "NOARR_UNUSED.hpp"
 
 #include "Hub_Chunk.hpp"
 
@@ -207,6 +208,7 @@ public:
                     dataflow_link.type != LinkType::consuming
                     && "There may only be one consuming link in the dataflow"
                 );
+                NOARR_UNUSED(dataflow_link);
 
                 // NOTE: If you are running into this assert there are two options:
                 // 1) You should really be switching between two dataflow strategies

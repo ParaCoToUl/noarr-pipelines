@@ -5,6 +5,7 @@
 
 #include "Device.hpp"
 #include "Envelope.hpp"
+#include "NOARR_UNUSED.hpp"
 
 namespace noarr {
 namespace pipelines {
@@ -34,6 +35,7 @@ public:
      */
     Envelope<Structure, BufferItem>& get_source_for_transfer(Device::index_t target) {
         assert(envelopes.count(target) == 0 && "Target is already present");
+        NOARR_UNUSED(target);
 
         // prefer copying "from host"
         if (envelopes.count(Device::HOST_INDEX) == 1)
