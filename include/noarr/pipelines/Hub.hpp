@@ -276,12 +276,14 @@ public:
      * 
      * The returned reference has only short lifetime, don't use it outside the
      * initialization method
+     * 
+     * @param from_device: what device to allocate the envelope on
      */
-    Envelope_t& push_new_chunk() {
+    Envelope_t& push_new_chunk(Device::index_t from_device = Device::HOST_INDEX) {
         guard_scheduler_thread();
 
-        if (empty_envelopes[Device::HOST_INDEX].empty()) {
-            assert(false && "No empty envelope available on the host");
+        if (empty_envelopes[from_device].empty()) {
+            assert(false && "No empty envelope available on the device");
         }
 
         // check the queue length constraint
@@ -290,10 +292,10 @@ public:
                 assert(false && "Queue is already at its size limit");
         }
 
-        Envelope_t& envelope = *empty_envelopes[Device::HOST_INDEX].back();
-        empty_envelopes[Device::HOST_INDEX].pop_back();
+        Envelope_t& envelope = *empty_envelopes[from_device].back();
+        empty_envelopes[from_device].pop_back();
         
-        chunks.push_back(std::make_unique<Chunk_t>(envelope, Device::HOST_INDEX));
+        chunks.push_back(std::make_unique<Chunk_t>(envelope, from_device));
         chunk_queue.push_back(&*chunks.back());
 
         return envelope;
@@ -304,8 +306,10 @@ public:
      * 
      * The returned reference has only short lifetime, don't use it outside the
      * finalization method
+     * 
+     * @param from_device: what device to access the envelope from
      */
-    Envelope_t& peek_top_chunk() {
+    Envelope_t& peek_top_chunk(Device::index_t from_device = Device::HOST_INDEX) {
         guard_scheduler_thread();
 
         if (chunk_queue.empty()) {
@@ -316,13 +320,13 @@ public:
         Chunk_t& top_chunk = *chunk_queue.front();
 
         // check that it's present on the host
-        if (top_chunk.envelopes.count(Device::HOST_INDEX) == 0) {
+        if (top_chunk.envelopes.count(from_device) == 0) {
             // TODO: do a synchronous copy, maybe?
-            assert(false && "The latest chunk is not present on the host");
+            assert(false && "The latest chunk is not present on the device");
         }
 
         // return reference to the envelope
-        return *top_chunk.envelopes[Device::HOST_INDEX];
+        return *top_chunk.envelopes[from_device];
     }
 
     /**
@@ -823,7 +827,7 @@ public:
     }
 };
 
-} // pipelines namespace
+} // namespace pipelines
 } // namespace noarr
 
 #endif
