@@ -22,7 +22,7 @@ namespace pipelines {
  * Hub is responsible for buffer allocation and transfer. It manages a set
  * of envelopes and provides these envelopes to the other nodes via links.
  */
-template<typename Structure, typename BufferItem>
+template<typename Structure, typename BufferItem = void>
 class Hub : public Node {
 private:
     using Envelope_t = Envelope<Structure, BufferItem>;

@@ -55,11 +55,23 @@ void kmeans(
     std::vector<point_t>& computed_centroids,
     std::vector<std::size_t>& computed_assignments
 ) {
+    using PointList = noarr::vector<'i', noarr::array<'d', 2, noarr::scalar<float>>>; // AoS
+    // using PointList = noarr::array<'d', 2, noarr::vector<'i', noarr::scalar<float>>>; // SoA
+
+    // hubs only contain structures with a specific size set,
+    // so we will name the type of the sized point list structure
+    using SizedPointList = decltype(PointList() | noarr::set_length<'i'>(0));
+
+    // TODO: try to use the bag wrapper when working with envelopes
+    // TODO: add structures to other hubs as well
+
     //////////////////////////
     // Define pipeline hubs //
     //////////////////////////
 
-    auto points_hub = Hub<std::size_t, point_t>(sizeof(point_t) * given_points.size());
+    auto points_hub = Hub<SizedPointList>(
+        PointList() | noarr::set_length<'i'>(given_points.size()) | noarr::get_size()
+    );
     points_hub.allocate_envelope(Device::HOST_INDEX);
     
     auto assignments_hub = Hub<std::size_t, std::size_t>(sizeof(std::size_t) * given_points.size());
@@ -73,9 +85,6 @@ void kmeans(
     
     auto counts_hub = Hub<std::size_t, std::size_t>(sizeof(std::size_t) * k);
     counts_hub.allocate_envelope(Device::HOST_INDEX);
-
-    // SIDENOTE: envelopes have not only buffers but also structure, but since
-    // we know all the sizes and layout in advance, we don't use it
 
     ///////////////////////////////////
     // Define pipeline compute nodes //
@@ -102,13 +111,18 @@ void kmeans(
         
         iterator.initialize([&](){
             // tranfser points data to the hub
-            auto points = points_hub.push_new_chunk().buffer;
-            memcpy(points, &given_points[0], sizeof(point_t) * given_points.size());
+            auto& points_envelope = points_hub.push_new_chunk();
+            points_envelope.structure = points_envelope.structure | noarr::set_length<'i'>(given_points.size());
+            for (std::size_t i = 0; i < given_points.size(); ++i) {
+                point_t p = given_points[i];
+                points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 0) = p.x;
+                points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 1) = p.y;
+            }
 
             // prepare initial centroids
             auto centroids = centroids_hub.push_new_chunk().buffer;
             for (std::size_t i = 0; i < k; ++i)
-                centroids[i] = points[i];
+                centroids[i] = given_points[i];
 
             // put empty chunks into the remaining hubs
             assignments_hub.push_new_chunk();
@@ -124,7 +138,7 @@ void kmeans(
         });
 
         iterator.advance_async([&](){
-            auto points = points_link.envelope->buffer;
+            auto& points_envelope = *points_link.envelope;
             auto assignments = assignments_link.envelope->buffer;
             auto centroids = centroids_link.envelope->buffer;
             auto sums = sums_link.envelope->buffer;
@@ -136,11 +150,15 @@ void kmeans(
             }
 
             // TODO: this loop can be turned into a kernel and do all this on cuda
+            point_t point;
             for (std::size_t i = 0; i < given_points.size(); ++i) {
-                std::size_t nearest = get_nearest_cluster(points[i], centroids, k);
+                point.x = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 0);
+                point.y = points_envelope.structure | noarr::get_at<'i', 'd'>(points_envelope.buffer, i, 1);
+
+                std::size_t nearest = get_nearest_cluster(point, centroids, k);
                 assignments[i] = nearest;
-                sums[nearest].x += points[i].x;
-                sums[nearest].y += points[i].y;
+                sums[nearest].x += point.x;
+                sums[nearest].y += point.y;
                 ++counts[nearest];
             }
 
