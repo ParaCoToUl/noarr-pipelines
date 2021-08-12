@@ -92,18 +92,6 @@ public:
      */
     UntypedEnvelope* untyped_envelope = nullptr;
 
-    UntypedLink(
-        Node* host_node,
-        LinkType type,
-        Device::index_t device_index,
-        bool autocommit
-    ) :
-        host_node(host_node),
-        type(type),
-        device_index(device_index),
-        autocommit(autocommit)
-    {}
-
     /**
      * Should be called by the guest when they receive the link instance
      * (so that the link properly binds the two nodes)
@@ -126,6 +114,19 @@ public:
         assert((callback != nullptr) && "Link callback is set to null");
         callback();
     }
+
+protected:
+    UntypedLink(
+        Node* host_node,
+        LinkType type,
+        Device::index_t device_index,
+        bool autocommit
+    ) :
+        host_node(host_node),
+        type(type),
+        device_index(device_index),
+        autocommit(autocommit)
+    {}
 };
 
 /**
