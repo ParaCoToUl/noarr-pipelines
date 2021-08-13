@@ -58,11 +58,11 @@ void matrix_multiply_impl(Matrix1& matrix1, Matrix2 &matrix2, int *data_results,
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height1), noarr::set_length<'n'>(width2));
 
 	if (*layout_results == "rows"s) {
-		auto matrix_results = noarr::make_bag(MatrixStructureRows() | noarr::set_length<'m'>(height1) | noarr::set_length<'n'>(width2), (char *)data_results);
+		auto matrix_results = noarr::make_bag(MatrixStructureRows() | set_dimensions, (char *)data_results);
 
 		matrix_multiply_impl(matrix1, matrix2, matrix_results);
-	} else if (*layout_results == "columns") {
-		auto matrix_results = noarr::make_bag(MatrixStructureColumns() | noarr::set_length<'m'>(height1) | noarr::set_length<'n'>(width2), (char *)data_results);
+	} else if (*layout_results == "columns"s) {
+		auto matrix_results = noarr::make_bag(MatrixStructureColumns() | set_dimensions, (char *)data_results);
 
 		matrix_multiply_impl(matrix1, matrix2, matrix_results);
 	}
@@ -76,11 +76,11 @@ void matrix_multiply_impl(Matrix1& matrix1, int *height2, int *width2, int *data
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(*height2), noarr::set_length<'n'>(*width2));
 
 	if (*layout2 == "rows"s) {
-		auto matrix2 = noarr::make_bag(MatrixStructureRows() | noarr::set_length<'m'>(*height2) | noarr::set_length<'n'>(*width2), (char *)data2);
+		auto matrix2 = noarr::make_bag(MatrixStructureRows() | set_dimensions, (char *)data2);
 
 		matrix_multiply_impl(matrix1, matrix2, data_results, layout_results);
-	} else if (*layout2 == "columns") {
-		auto matrix2 = noarr::make_bag(MatrixStructureColumns() | noarr::set_length<'m'>(*height2) | noarr::set_length<'n'>(*width2), (char *)data2);
+	} else if (*layout2 == "columns"s) {
+		auto matrix2 = noarr::make_bag(MatrixStructureColumns() | set_dimensions, (char *)data2);
 
 		matrix_multiply_impl(matrix1, matrix2, data_results, layout_results);
 	}
@@ -93,18 +93,16 @@ void matrix_multiply(int *height1, int *width1, int *data1, char **layout1, int 
 {
 	using std::string_literals::operator""s;
 
-	// auto set_dimensions = noarr::compose(noarr::set_length<'m'>(*height1), noarr::set_length<'n'>(*width1));
+	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(*height1), noarr::set_length<'n'>(*width1));
 
 	if (*layout1 == "rows"s) {
-		auto matrix1 = noarr::make_bag(MatrixStructureRows() | noarr::set_length<'m'>(*height1) | noarr::set_length<'n'>(*width1), (char *)data1);
+		auto matrix1 = noarr::make_bag(MatrixStructureRows() | set_dimensions, (char *)data1);
 
 		matrix_multiply_impl(matrix1, height2, width2, data2, layout2, data_results, layout_results);
-	} else if (*layout1 == "columns") {
-		auto matrix1 = noarr::make_bag(MatrixStructureColumns() | noarr::set_length<'m'>(*height1) | noarr::set_length<'n'>(*width1), (char *)data1);
+	} else if (*layout1 == "columns"s) {
+		auto matrix1 = noarr::make_bag(MatrixStructureColumns() | set_dimensions, (char *)data1);
 
 		matrix_multiply_impl(matrix1, height2, width2, data2, layout2, data_results, layout_results);
-	} else {
-		std::cout << *layout1 << std::endl;
 	}
 }
 

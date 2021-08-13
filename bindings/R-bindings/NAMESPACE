@@ -1,2 +1,2 @@
-export(matrix_multiply)
+export(matrix_multiply_demo)
 useDynLib(noarr.matrix, .registration = TRUE)
