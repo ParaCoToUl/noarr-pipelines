@@ -1,0 +1,16 @@
+Package: noarr.matrix
+Title: Matrix with More Points
+Version: 0.1
+Authors@R: 
+    person(given = "Jiří",
+           family = "Klepl",
+           role = c("aut", "cre"),
+           email = "jiriklepl@seznam.cz")
+Description: C-based conversion of large matrix data to rasters. Speeds up
+             plotting of data with millions of points.
+URL: https://github.com/ParaCoToUl/noarr-pipelines
+Imports: 
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+SystemRequirements: C++17

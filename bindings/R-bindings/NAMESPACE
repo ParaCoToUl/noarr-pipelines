@@ -1,0 +1,2 @@
+export(matrix_multiply)
+useDynLib(noarr.matrix, .registration = TRUE)

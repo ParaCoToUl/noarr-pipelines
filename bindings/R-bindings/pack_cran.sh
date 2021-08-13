@@ -2,28 +2,29 @@
 # packs the current git HEAD (or any other supplied git head) into a tarball
 # suitable for CRAN submission. Version comes from git as the latest tag.
 
-N=scattermore
+NAME=noarr-matrix
+PREFIX="noarr-pipelines/bindings/R-bindings"
 HEAD="${1:-HEAD}"
-VERTAG=$(git describe --tags --no-abbrev "${HEAD}")
+VERTAG=0.1
 VER=${VERTAG#v}
-ARCHIVE=${N}_${VER}.tar.gz
+ARCHIVE=${NAME}_${VER}.tar.gz
 
 TMPDIR=".tmpbuild-$$"
 
 mkdir ${TMPDIR} || exit 1
-
-git archive --format=tar --prefix="${N}/" "${HEAD}" \
+git archive --format=tar --prefix="${PREFIX}/" "${HEAD}" \
 | tar f - \
-	--delete "${N}/pack_cran.sh" \
-	--delete "${N}/media" \
-	--delete "${N}/README.md" \
+	--delete "${PREFIX}/pack_cran.sh" \
+	--delete "${PREFIX}/README.md" \
 | tar xf - -C ${TMPDIR}
 
-R --vanilla CMD build ./${TMPDIR}/${N}/ --compact-vignettes
+git clone https://github.com/ParaCoToUl/noarr-structures.git/ ${TMPDIR}/${PREFIX}/noarr-structures
+
+R --vanilla CMD build ./${TMPDIR}/${PREFIX}/ --no-manual
 
 rm -fr ${TMPDIR}
 
 R --vanilla CMD check --as-cran ${ARCHIVE}
-#R CMD check --as-cran --use-valgrind ${ARCHIVE}
+R CMD check --as-cran --use-valgrind ${ARCHIVE}
 
-echo "Did you run roxygen? (and valgrind?)"
+echo "Did you run valgrind?"
