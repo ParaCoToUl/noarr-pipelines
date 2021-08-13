@@ -37,8 +37,8 @@ set_target_properties(test-runner PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 # cuda architecture to compile against
 set_target_properties(test-runner PROPERTIES CUDA_ARCHITECTURES "35;50;72")
 
-# make nvcc use C++ 11
-set_target_properties(test-runner PROPERTIES CUDA_STANDARD 11)
+# make nvcc use C++ 14
+set_target_properties(test-runner PROPERTIES CUDA_STANDARD 14)
 
 
 # CANNOT BE PEDANTIC, because nvcc generates crappy C code and you get a ton of:

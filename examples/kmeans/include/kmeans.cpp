@@ -4,11 +4,16 @@
 #include <vector>
 #include <chrono>
 
-#include <noarr/pipelines.hpp>
+#include <cuda_runtime.h>
+
 #include <noarr/structures_extended.hpp>
+
+#include <noarr/pipelines.hpp>
+#include <noarr/cuda-pipelines.hpp>
 #include <noarr/structures-pipelines.hpp>
 
 #include "point_t.hpp"
+#include "kernels.hpp"
 #include "utilities.cpp"
 
 using namespace noarr::pipelines;
@@ -34,6 +39,8 @@ void kmeans(
     // so we will explicitly name the type of the sized point list structure
     using SizedPointList = decltype(PointList() | noarr::set_length<'i'>(0));
 
+    // make sure we have the cuda pipelines extension registered
+    CudaPipelines::register_extension();
 
     //////////////////////////
     // Define pipeline hubs //
@@ -51,6 +58,7 @@ void kmeans(
         PointList() | noarr::set_length<'i'>(given_points.size()) | noarr::get_size()
     );
     points_hub.allocate_envelope(Device::HOST_INDEX);
+    points_hub.allocate_envelope(Device::DEVICE_INDEX);
     
     /**
      * Holds assignments of input points to computed centroids
@@ -63,6 +71,7 @@ void kmeans(
      */
     auto assignments_hub = Hub<void*, std::size_t>(sizeof(std::size_t) * given_points.size());
     assignments_hub.allocate_envelope(Device::HOST_INDEX);
+    assignments_hub.allocate_envelope(Device::DEVICE_INDEX);
     
     /**
      * Holds the list of centroid points, as they are refined
@@ -71,6 +80,7 @@ void kmeans(
         PointList() | noarr::set_length<'i'>(k) | noarr::get_size()
     );
     centroids_hub.allocate_envelope(Device::HOST_INDEX);
+    centroids_hub.allocate_envelope(Device::DEVICE_INDEX);
     
     /**
      * Helper buffer that stores point position sums for each cluster
@@ -79,14 +89,14 @@ void kmeans(
     auto sums_hub = Hub<SizedPointList>(
         PointList() | noarr::set_length<'i'>(k) | noarr::get_size()
     );
-    sums_hub.allocate_envelope(Device::HOST_INDEX);
+    sums_hub.allocate_envelope(Device::DEVICE_INDEX);
     
     /**
      * Helper buffer that stores point count for each cluster
      * to be used during centroid computation
      */
     auto counts_hub = Hub<void*, std::size_t>(sizeof(std::size_t) * k);
-    counts_hub.allocate_envelope(Device::HOST_INDEX);
+    counts_hub.allocate_envelope(Device::DEVICE_INDEX);
 
 
     ///////////////////////////////////
@@ -101,18 +111,18 @@ void kmeans(
     /**
      * The compute node that will compute one iteration of the algorithm each time it is advanced
      */
-    auto iterator = LambdaAsyncComputeNode("iterator");
+    auto iterator = LambdaCudaComputeNode("iterator");
 
     // a nested code block to define the iterator compute node
     // (the code block is only here for the readablity and is not needed)
     {
         // we define all the links to all the hubs
         // the iterator compute node may only be advanced if there are chunks present in all of these hubs
-        auto& points_link = iterator.link(points_hub.to_peek(Device::HOST_INDEX));
-        auto& assignments_link = iterator.link(assignments_hub.to_modify(Device::HOST_INDEX));
-        auto& centroids_link = iterator.link(centroids_hub.to_modify(Device::HOST_INDEX));
-        auto& sums_link = iterator.link(sums_hub.to_modify(Device::HOST_INDEX));
-        auto& counts_link = iterator.link(counts_hub.to_modify(Device::HOST_INDEX));
+        auto& points_link = iterator.link(points_hub.to_peek(Device::DEVICE_INDEX));
+        auto& assignments_link = iterator.link(assignments_hub.to_modify(Device::DEVICE_INDEX));
+        auto& centroids_link = iterator.link(centroids_hub.to_modify(Device::DEVICE_INDEX));
+        auto& sums_link = iterator.link(sums_hub.to_modify(Device::DEVICE_INDEX));
+        auto& counts_link = iterator.link(counts_hub.to_modify(Device::DEVICE_INDEX));
 
         /**
          * Before the pipeline starts running, put initial data into all hubs
@@ -139,12 +149,12 @@ void kmeans(
             }
 
             // put empty chunks into the remaining hubs
-            auto& sums_envelope = sums_hub.push_new_chunk();
+            auto& sums_envelope = sums_hub.push_new_chunk(Device::DEVICE_INDEX);
             sums_envelope.structure = PointList() | noarr::set_length<'i'>(k);
             
             // these two hubs do not use the structure variable
-            assignments_hub.push_new_chunk();
-            counts_hub.push_new_chunk();
+            assignments_hub.push_new_chunk(Device::DEVICE_INDEX);
+            counts_hub.push_new_chunk(Device::DEVICE_INDEX);
         });
 
         /**
@@ -158,52 +168,20 @@ void kmeans(
          * Definition of the "advance" method. It implements one refinement iteration of kmeans.
          * (this method runs in a background thread and does not block the scheduler)
          */
-        iterator.advance_async([&](){
+        iterator.advance_cuda([&](cudaStream_t stream){
             auto points_bag = bag_from_link(points_link);
             auto sums_bag = bag_from_link(sums_link);
             auto centroids_bag = bag_from_link(centroids_link);
             auto assignments = assignments_link.envelope->buffer;
             auto counts = counts_link.envelope->buffer;
 
-            // TODO: also turn into a kernel to avoid memory copying
-            for (std::size_t i = 0; i < k; ++i) {
-                sums_bag.template at<'i', 'd'>(i, 0) = 0;
-                sums_bag.template at<'i', 'd'>(i, 1) = 0;
-                counts[i] = 0;
-            }
+            run_clear_sums_and_counts_kernel(sums_bag, counts, k, stream);
 
-            // TODO: this loop can be turned into a kernel and do all this on cuda
-            for (std::size_t p = 0; p < given_points.size(); ++p) {
-                float px = points_bag.template at<'i', 'd'>(p, 0);
-                float py = points_bag.template at<'i', 'd'>(p, 1);
+            run_recompute_nearest_centroids_kernel(
+                points_bag, centroids_bag, sums_bag, assignments, counts, stream
+            );
 
-                // get nearest centroid index
-                std::size_t nearest_centroid_index = -1;
-                float nearest_centroid_distance = std::numeric_limits<float>::infinity();
-                for (std::size_t c = 0; c < k; ++c) {
-                    float cx = centroids_bag.template at<'i', 'd'>(c, 0);
-                    float cy = centroids_bag.template at<'i', 'd'>(c, 1);
-                    float dx = px - cx;
-                    float dy = py - cy;
-                    float distance = dx*dx + dy*dy;
-                    if (distance < nearest_centroid_distance) {
-                        nearest_centroid_distance = distance;
-                        nearest_centroid_index = c;
-                    }
-                }
-
-                assignments[p] = nearest_centroid_index;
-                sums_bag.template at<'i', 'd'>(nearest_centroid_index, 0) += px;
-                sums_bag.template at<'i', 'd'>(nearest_centroid_index, 1) += py;
-                counts[nearest_centroid_index] += 1;
-            }
-
-            // TODO: also turn into a kernel to avoid memory copying
-            for (std::size_t i = 0; i < k; ++i) {
-                if (counts[i] == 0) continue;	// If the cluster is empty, keep its previous centroid.
-                centroids_bag.template at<'i', 'd'>(i, 0) = sums_bag.template at<'i', 'd'>(i, 0) / counts[i];
-                centroids_bag.template at<'i', 'd'>(i, 1) = sums_bag.template at<'i', 'd'>(i, 1) / counts[i];
-            }
+            run_reposition_centroids_kernel(centroids_bag, sums_bag, counts, stream);
         });
 
         /**

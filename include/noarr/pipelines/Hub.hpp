@@ -319,18 +319,19 @@ public:
         // get the top chunk
         Chunk_t& top_chunk = *chunk_queue.front();
 
-        // check that it's present on the host
+        // check that it's present on the requested device
         if (top_chunk.envelopes.count(from_device) == 0) {
             // copy the envelope synchronously to the requested device
+            say("Transferring chunk synchronously to the device: " + std::to_string(from_device));
             Envelope_t& target_env = obtain_envelope_for_transfer(from_device);
             Envelope_t& source_env = top_chunk.get_source_for_transfer(from_device);
-            top_chunk.envelopes[from_device] = &target_env;
             target_env.structure = source_env.structure;
             hardware_manager.transfer_data_sync(
                 source_env.allocated_buffer_instance,
                 target_env.allocated_buffer_instance,
                 buffer_size
             );
+            top_chunk.envelopes[from_device] = &target_env;
         }
 
         // return reference to the envelope
