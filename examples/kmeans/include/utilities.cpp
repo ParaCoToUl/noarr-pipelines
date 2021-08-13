@@ -109,6 +109,11 @@ void print_assignments_histogram(std::size_t k, const std::vector<std::size_t>& 
     std::vector<std::size_t> counts(k, 0);
 
     for (std::size_t assignment : assignments) {
+        assert(assignment >= 0
+            && "Assignment is negative and thus makes no sense");
+        assert(assignment < assignments.size()
+            && "Assignment is too large and thus makes no sense");
+
         counts[assignment] += 1;
     }
 

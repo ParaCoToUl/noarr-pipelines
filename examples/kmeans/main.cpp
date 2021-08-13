@@ -115,5 +115,12 @@ int main(int argc, char* argv[]) {
     std::cout << "You can customize the behavior in future runs by providing arguments:" << std::endl;
     std::cout << "kmeans [total_points] [refinements]" << std::endl;
 
+    #ifndef NDEBUG
+    std::cout << std::endl;
+    std::cout << "WARNING: The program has been compiled in debug mode without "
+        << "optimizations. For meaningful time measurements compile in release "
+        << "mode (see the README compilation section)." << std::endl;
+    #endif
+
     return 0;
 }
