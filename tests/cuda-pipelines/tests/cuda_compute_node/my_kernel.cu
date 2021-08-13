@@ -16,4 +16,5 @@ void run_my_kernel(int* items, std::size_t count, cudaStream_t stream) {
     constexpr std::size_t BLOCK_SIZE = 128;
 
     my_kernel<<<(count + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream>>>(items, count);
+    NOARR_CUCH(cudaGetLastError());
 }

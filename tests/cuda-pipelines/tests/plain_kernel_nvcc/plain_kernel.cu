@@ -22,6 +22,8 @@ Item run_plain_kernel() {
     NOARR_CUCH(cudaMalloc(&gpu_data, BYTES));
 
     plain_kernel<Item><<<ITEMS / BLOCK_SIZE, BLOCK_SIZE>>>(gpu_data);
+    NOARR_CUCH(cudaGetLastError());
+
     NOARR_CUCH(cudaDeviceSynchronize());
 
     NOARR_CUCH(cudaMemcpy(cpu_data, gpu_data, BYTES, cudaMemcpyDeviceToHost));

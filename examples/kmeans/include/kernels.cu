@@ -35,6 +35,7 @@ void run_clear_sums_and_counts_kernel(
     clear_sums_and_counts_kernel<<<
         (k + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream
     >>>(sums_bag, counts, k);
+    NOARR_CUCH(cudaGetLastError());
 }
 
 
@@ -95,6 +96,7 @@ void run_recompute_nearest_centroids_kernel(
     recompute_nearest_centroids_kernel<<<
         (point_count + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream
     >>>(points_bag, centroids_bag, sums_bag, assignments, counts);
+    NOARR_CUCH(cudaGetLastError());
 }
 
 
@@ -133,4 +135,5 @@ void run_reposition_centroids_kernel(
     reposition_centroids_kernel<<<
         (k + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream
     >>>(centroids_bag, sums_bag, counts);
+    NOARR_CUCH(cudaGetLastError());
 }
