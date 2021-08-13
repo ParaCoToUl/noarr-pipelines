@@ -36,8 +36,8 @@ void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2& matrix2, Matrix
 
 			for (std::size_t k = 0; k < width1; k++)
 			{
-				int& value1 = matrix1.template at<'n', 'm'>(k, j);
-				int& value2 = matrix2.template at<'n', 'm'>(i, k);
+				const int& value1 = matrix1.template at<'n', 'm'>(k, j);
+				const int& value2 = matrix2.template at<'n', 'm'>(i, k);
 
 				sum += value1 * value2;
 			}
