@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# this is an example usage of the library
+# this is an example usage of the demo library
 
 install.packages('noarr.matrix_0.1.tar.gz', type='source')
 library('noarr.matrix')

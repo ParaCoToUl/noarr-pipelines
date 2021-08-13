@@ -19,7 +19,7 @@ using MatrixStructureColumns = noarr::vector<'n', noarr::vector<'m', noarr::scal
  * @return Matrix noarr matrix created from source noarr matrices
  */
 template<typename Matrix1, typename Matrix2, typename MatrixResult>
-void matrix_multiply_impl(Matrix1& matrix1, Matrix2& matrix2, MatrixResult& result)
+void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2& matrix2, MatrixResult& result)
 {
 	std::size_t height1 = matrix1.template get_length<'m'>();
 	std::size_t width1 = matrix1.template get_length<'n'>();
@@ -48,7 +48,7 @@ void matrix_multiply_impl(Matrix1& matrix1, Matrix2& matrix2, MatrixResult& resu
 }
 
 template<typename Matrix1, typename Matrix2>
-void matrix_multiply_impl(Matrix1& matrix1, Matrix2 &matrix2, int *data_results, char **layout_results)
+void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2 &matrix2, int *data_results, const char **layout_results)
 {
 	using std::string_literals::operator""s;
 
@@ -69,7 +69,10 @@ void matrix_multiply_impl(Matrix1& matrix1, Matrix2 &matrix2, int *data_results,
 }
 
 template<typename Matrix1>
-void matrix_multiply_impl(Matrix1& matrix1, int *height2, int *width2, int *data2, char **layout2, int *data_results, char **layout_results)
+void matrix_multiply_impl(
+	const Matrix1& matrix1,
+	const int *height2, const int *width2, const int *data2, const char **layout2,
+	int *data_results, const char **layout_results)
 {
 	using std::string_literals::operator""s;
 
@@ -89,7 +92,10 @@ void matrix_multiply_impl(Matrix1& matrix1, int *height2, int *width2, int *data
 extern "C" {
 
 
-void matrix_multiply(int *height1, int *width1, int *data1, char **layout1, int *height2, int *width2, int *data2, char **layout2, int *data_results, char **layout_results)
+void matrix_multiply(
+	const int *height1, const int *width1, const int *data1, const char **layout1,
+	const int *height2, const int *width2, const int *data2, const char **layout2,
+	int *data_results, const char **layout_results)
 {
 	using std::string_literals::operator""s;
 
