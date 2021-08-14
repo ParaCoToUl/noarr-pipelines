@@ -8,6 +8,10 @@ using namespace noarr::pipelines;
 
 int main(int argc, char* argv[]) {
 
+    // we want to simulate a GPU and corresponding allocations and memory
+    // transfers to demonstrate the full capability of the framework
+    HardwareManager::default_manager().register_dummy_gpu();
+
 
     ///////////////////////////////////////
     // Parse arguments and open the file //
@@ -47,10 +51,12 @@ int main(int argc, char* argv[]) {
     auto reader_hub = Hub<std::size_t, char>(BUFFER_SIZE);
     auto writer_hub = Hub<std::size_t, char>(BUFFER_SIZE);
 
-    // give each hub two envelopes (individual data holders)
-    // to rotate them and thus overlay writing and reading operations
+    // give each hub two envelopes (individual data holders) for each device
+    // to rotate them and thus overlay writing, reading and transfer operations
     reader_hub.allocate_envelopes(Device::HOST_INDEX, 2);
+    reader_hub.allocate_envelopes(Device::DUMMY_GPU_INDEX, 2);
     writer_hub.allocate_envelopes(Device::HOST_INDEX, 2);
+    writer_hub.allocate_envelopes(Device::DUMMY_GPU_INDEX, 2);
 
     // NOTE: We allocate all data on the host (the CPU), as this is
     // a simple demonstration. But a compute node may request data on
@@ -110,11 +116,14 @@ int main(int argc, char* argv[]) {
 
     // the capitalizer wants to access both hubs,
     // consuming chunks from one and producing chunks into the other
+    //
+    // it also pretends to be a gpu kernel, so it wants the data to be located
+    // on the gpu device
     auto& capitalizer_input_link = capitalizer.link(
-        reader_hub.to_consume(Device::HOST_INDEX)
+        reader_hub.to_consume(Device::DUMMY_GPU_INDEX)
     );
     auto& capitalizer_output_link = capitalizer.link(
-        writer_hub.to_produce(Device::HOST_INDEX)
+        writer_hub.to_produce(Device::DUMMY_GPU_INDEX)
     );
 
     capitalizer.advance([&](){
