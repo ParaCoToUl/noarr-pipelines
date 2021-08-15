@@ -30,7 +30,7 @@ protected:
         ComputeNode::__internal__advance(); // call the standard "advance"
 
         // callback was already called in the "advance" method,
-        // so we don't need to continue to "advance_async"
+        // so we do not need to continue to "advance_async"
         if (!this->can_call_callback())
             return;
 
@@ -47,14 +47,14 @@ protected:
 
         // the user need not call the callback inside the advance_async method,
         // they can just return
-        // (this is because we don't expect any additional asynchronous jobs
+        // (this is because we do not expect any additional asynchronous jobs
         // to be started and if so, the user should .join() on them before returning)
         if (this->can_call_callback())
             this->callback();
     }
 
     virtual void advance() override {
-        // don't call callback here
+        // do not call callback here
         // (the default node implementation does, we moved it to advance_async)
     }
 

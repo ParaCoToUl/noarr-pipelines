@@ -41,7 +41,7 @@ public:
         if (envelopes.count(Device::HOST_INDEX) == 1)
             return *envelopes[Device::HOST_INDEX];
 
-        // now we're copying "to host" and there's probably only one instance,
+        // now we are copying "to host" and there is probably only one instance,
         // so pick the first that we come across
         assert(envelopes.size() > 0 && "The chunk has no envelopes to copy from");
         return *(envelopes.begin()->second);

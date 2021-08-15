@@ -3,9 +3,9 @@
 
 ## Basics
 
-Noarr pipelines aims to provide a framework for building computational pipelines for GPGPU computing. These pipelines are designed to process data that won't fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
+Noarr pipelines aims to provide a framework for building computational pipelines for GPGPU computing. These pipelines are designed to process data that would not fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
 
-The core conceptual unit of a pipeline is a *compute node*. It's an entity that receives one chunk of data and is triggered to perform a computation on that chunk. The computation can produce a new chunk, modify the existing or perform an aggregation or do any combination of these actions.
+The core conceptual unit of a pipeline is a *compute node*. It is an entity that receives one chunk of data and is triggered to perform a computation on that chunk. The computation can produce a new chunk, modify the existing or perform an aggregation or do any combination of these actions.
 
 ```cpp
 // create a compute node
@@ -98,12 +98,12 @@ auto consumer = LambdaAsyncComputeNode(); {
 
 > **Caution:** Be careful about declaring variables in the braced compute node body. Their lifetime may be shorter than the lifetime of provided lambda expressions. Usually, declare only links there and only as references. Passing a reference by reference to a lambda will actually copy the underlying pointer and the lifetime issue is not an issue.
 
-> **Note:** There's also an alternative inheritance-based API if your pipeline is more complicated or you don't like this lambda-based API.
+> **Note:** There is also an alternative inheritance-based API if your pipeline is more complicated or you do not like this lambda-based API.
 
 
 ## Scheduling
 
-Once you define your pipeline, you need a scheduler to trigger individual pipeline nodes. Here's the code for the example above:
+Once you define your pipeline, you need a scheduler to trigger individual pipeline nodes. Here is the code for the example above:
 
 ```cpp
 auto scheduler = DebuggingScheduler();
@@ -118,21 +118,21 @@ The scheduler has a list of nodes it tries to trigger, but before it triggers a 
 
 > **Note:** *Advance* means to *advance data through the pipeline*.
 
-You may have noticed that we didn't provide the `can_advance` function for the consumer node in our example above. This is because a *compute node* is somewhat special, compared to a generic pipeline node. A *compute node* has the added constraint that it cannot be advanced, unless all of its links are ready (have an envelope prepared). This is enough to condition our consumer - it consumes chunks as long as there are chunks to consume.
+You may have noticed that we did not provide the `can_advance` function for the consumer node in our example above. This is because a *compute node* is somewhat special, compared to a generic pipeline node. A *compute node* has the added constraint that it cannot be advanced, unless all of its links are ready (have an envelope prepared). This is enough to condition our consumer - it consumes chunks as long as there are chunks to consume.
 
-A *hub* is also a pipeline node, triggered by the scheduler like any other node. But you don't need to worry about this from the user perspective.
+A *hub* is also a pipeline node, triggered by the scheduler like any other node. But you do not need to worry about this from the user perspective.
 
 
 ## Multithreading
 
-The thread that calls `scheduler.run()` is called the *scheduler thread*. It's important, because it is guaranteed that all important synchronization events (like the `can_advance` invocation) happen on the scheduler thread. This lets you to not worry about locks and other synchronization primitives.
+The thread that calls `scheduler.run()` is called the *scheduler thread*. It is important, because it is guaranteed that all important synchronization events (like the `can_advance` invocation) happen on the scheduler thread. This lets you to not worry about locks and other synchronization primitives.
 
-There are different types of compute nodes that run their computation in different contexts, but the `AsyncComputeNode` for example has four imporant methods: `can_advance`, `advance`, `advance_async`, `post_advance`. All of these methods, except for `advance_async` run on the scheduler thread and make it easy for you to access and modify any global state. The `advance_async` method then runs in a background thread and can perform some heavy computation without blocking the scheduler thread. But you have to make sure you don't access global variables, that could be simultaneously accessed by other nodes from there.
+There are different types of compute nodes that run their computation in different contexts, but the `AsyncComputeNode` for example has four important methods: `can_advance`, `advance`, `advance_async`, `post_advance`. All of these methods, except for `advance_async` run on the scheduler thread and make it easy for you to access and modify any global state. The `advance_async` method then runs in a background thread and can perform some heavy computation without blocking the scheduler thread. But you have to make sure you do not access global variables, that could be simultaneously accessed by other nodes from there.
 
 
 ## Debugging
 
-Since a pipeline is a complicated computational model, it's oftentimes difficult to troubleshoot problems. One of the tools you have at your disposal is the debugging scheduler:
+Since a pipeline is a complicated computational model, it is oftentimes difficult to troubleshoot problems. One of the tools you have at your disposal is the debugging scheduler:
 
 ```cpp
 auto scheduler = DebuggingScheduler(std::cout);
@@ -148,7 +148,7 @@ Each pipeline node has a label that is used in the log. You can set a label for 
 auto my_node = LambdaAsyncComputeNode("my-node");
 ```
 
-Sometimes you'd also like to see, what's happening inside a hub (how is the data transfered). You can do this by enabling logging for the hub in a similar way to the scheduler:
+Sometimes you would also like to see, what is happening inside a hub (how is the data transferred). You can do this by enabling logging for the hub in a similar way to the scheduler:
 
 ```cpp
 my_hub.start_logging(std::cout);
@@ -157,15 +157,15 @@ my_hub.start_logging(std::cout);
 
 ## Nodes and envelope hosting
 
-From the scheduler's point of view it doesn't matter where the data in the pipeline comes from. It just advances nodes when they can be advanced. But since we typically think of programs as having a datastructure and an algorithm, we devised two types of nodes: hubs and compute nodes. There is currently no need to develop other kinds of data-holding nodes, but if that was to become a need, this section describes the conceptual framework.
+From the scheduler's point of view it does not matter where the data in the pipeline comes from. It just advances nodes when they can be advanced. But since we typically think of programs as having a data-structure and an algorithm, we devised two types of nodes: hubs and compute nodes. There is currently no need to develop other kinds of data-holding nodes, but if that was to become a need, this section describes the conceptual framework.
 
 Data is exchanged between nodes via links. There is the node that owns the data - the *host*. And the node that acts on the provided data - the *guest* (e.g. the hub hosts envelopes to compute nodes). This terminology governs the structure of a link.
 
-A links starts out with no envelope attached. It's the hosts responsibility to acquire an envelope and attach it to the link. Whether the envelope contains data or not depends on the host and the link type can be used to guide the decision. The moment an envelope is attached by the host, the link transitions to a *fresh* state. Now it's the guest's turn. Guest can look at the envelope and do with it what it sees fit. Once the guest is done, it switches the link to a *processed* state. Now the host can detach the envelope and continue working with it. This is how one node can lend an envelope to another node.
+A links starts out with no envelope attached. It is the host's responsibility to acquire an envelope and attach it to the link. Whether the envelope contains data or not depends on the host and the link type can be used to guide the decision. The moment an envelope is attached by the host, the link transitions to a *fresh* state. Now it is the guest's turn. Guest can look at the envelope and do with it what it sees fit. Once the guest is done, it switches the link to a *processed* state. Now the host can detach the envelope and continue working with it. This is how one node can lend an envelope to another node.
 
-Apart from the link state and the attached envelope, the link also has additional information present that may or may not be used by both interacting sides. The link has a type and it has a *commited* flag. There are four types of links: producing, consuming, peeking and modifying. These types describe the kind of interation the guest wants to make with the data. When producing, the host provides an empty envelope and guest fills it with data. The opposite happens during consumption. During peeking and modification the host provides some existing data to the guest, who can either look at or modify the data. The *commited* flag is set by the guest during production, consumption or modification to signal that the action was in fact performed. This lets the guest to e.g. not consume a chunk of data if it doesn't like the chunk.
+Apart from the link state and the attached envelope, the link also has additional information present that may or may not be used by both interacting sides. The link has a type and it has a *committed* flag. There are four types of links: producing, consuming, peeking and modifying. These types describe the kind of interaction the guest wants to make with the data. When producing, the host provides an empty envelope and guest fills it with data. The opposite happens during consumption. During peeking and modification the host provides some existing data to the guest, who can either look at or modify the data. The *committed* flag is set by the guest during production, consumption or modification to signal that the action was in fact performed. This lets the guest to e.g. not consume a chunk of data if it does not like the chunk.
 
-A link also has an *autocommit* flag that simply states that the action will be commited automatically when the envelope lending finishes. If this flag is set to `false`, the guest node has to manually call a `commit()` method before finishing the envelope lending.
+A link also has an *autocommit* flag that simply states that the action will be committed automatically when the envelope lending finishes. If this flag is set to `false`, the guest node has to manually call a `commit()` method before finishing the envelope lending.
 
 The link also has an associated device, that specifies on which device should the hosted envelope exist.
 

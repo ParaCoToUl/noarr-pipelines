@@ -56,7 +56,7 @@ TEST_CASE("Async compute node", "[pipelines][unit][async_compute_node]") {
     scheduler.add(async_node);
     scheduler.run();
 
-    // check that the log order matches what's expected
+    // check that the log order matches what is expected
     REQUIRE(log.size() == expected_log.size());
     for (std::size_t i = 0; i < log.size(); ++i) {
         REQUIRE(expected_log[i] == log[i]);

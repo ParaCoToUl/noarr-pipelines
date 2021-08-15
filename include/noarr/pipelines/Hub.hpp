@@ -35,7 +35,7 @@ private:
      */
     HardwareManager& hardware_manager;
 
-    // poitners to envelopes participating in a memory transfer
+    // pointers to envelopes participating in a memory transfer
     Envelope_t* source_envelope_for_transfer = nullptr;
     Envelope_t* target_envelope_for_transfer = nullptr;
 
@@ -47,7 +47,7 @@ private:
 
     /**
      * Maximum length the queue can be.
-     * When set to zero, it's considered to be without limit.
+     * When set to zero, it is considered to be without limit.
      * (limited only by the number of available envelopes)
      * 
      * Setting a limit is useful for preventin hub from exhausting all available
@@ -91,7 +91,7 @@ private:
      * Index [0] is the consuming end and index [size - 1] is the producing end.
      * Adding new chunk is "push_back" and consuming next chunk is "pop_front".
      * 
-     * The chunk that's about to be consumed is the "top chunk" (at index [0]).
+     * The chunk that is about to be consumed is the "top chunk" (at index [0]).
      */
     std::deque<Chunk_t*> chunk_queue;
 
@@ -156,7 +156,7 @@ public:
     /**
      * Makes the dataflow empty.
      * 
-     * This prevents consumtion so make sure to combine it with other dataflow
+     * This prevents consumption so make sure to combine it with other dataflow
      * setting methods.
      */
     void reset_dataflow() {
@@ -178,7 +178,7 @@ public:
         if (reset_flow_first)
             reset_dataflow();
 
-        // check that the link isn't producing (how could we flow data into that?)
+        // check that the link is not producing (how could we flow data into that?)
         assert(
             link.type != LinkType::producing
             && "You cannot flow data into a producing link."
@@ -213,9 +213,9 @@ public:
                 // NOTE: If you are running into this assert there are two options:
                 // 1) You should really be switching between two dataflow strategies
                 // where each one strategy uses only one consuming link.
-                // 2) You have a vaild usecase that we didn't think about, in which
+                // 2) You have a valid usecase that we did not think about, in which
                 // case you can remove this assert from the code. Just make sure
-                // you won't consume one chunk twice as that is detected later
+                // you do not consume one chunk twice as that is detected later
                 // in the code and it will crash your program.
             }
         }
@@ -242,9 +242,9 @@ public:
      * Attempts to automatically infer dataflow, returns true on success
      */
     bool infer_dataflow() {
-        // TLDR: Get all non-producing links and if there's only one such link,
-        // use that. Otherwise there's none, or we cannot decide on which to use,
-        // so don't infer anything.
+        // TLDR: Get all non-producing links and if there is only one such link,
+        // use that. Otherwise there is none, or we cannot decide on which to use,
+        // so do not infer anything.
 
         bool found_a_link = false;
 
@@ -256,7 +256,7 @@ public:
                 || link.type == LinkType::modifying
                 || link.type == LinkType::peeking)
             {
-                // we've already found one, we cannot decide on which one to use
+                // we have already found one, we cannot decide on which one to use
                 if (found_a_link)
                     return false;
 
@@ -264,7 +264,7 @@ public:
                 flow_data_to(link);
                 found_a_link = true;
 
-                // don't return yet, we need to check for ambiguity
+                // do not return yet, we need to check for ambiguity
             }
         }
 
@@ -274,7 +274,7 @@ public:
     /**
      * Can be called synchronously during initialization to initialize the hub content
      * 
-     * The returned reference has only short lifetime, don't use it outside the
+     * The returned reference has only short lifetime, do not use it outside the
      * initialization method
      * 
      * @param from_device: what device to allocate the envelope on
@@ -304,7 +304,7 @@ public:
     /**
      * Can be called synchronously during finalization to read the top chunk
      * 
-     * The returned reference has only short lifetime, don't use it outside the
+     * The returned reference has only short lifetime, do not use it outside the
      * finalization method
      * 
      * @param from_device: what device to access the envelope from
@@ -319,7 +319,7 @@ public:
         // get the top chunk
         Chunk_t& top_chunk = *chunk_queue.front();
 
-        // check that it's present on the requested device
+        // check that it is present on the requested device
         if (top_chunk.envelopes.count(from_device) == 0) {
             // copy the envelope synchronously to the requested device
             say("Transferring chunk synchronously to the device: " + std::to_string(from_device));
@@ -396,9 +396,9 @@ public:
         // remember the scheduler thread id
         scheduler_thread_id = std::this_thread::get_id();
         
-        // try to infer dataflow if the user didn't specify an explicit one
+        // try to infer dataflow if the user did not specify an explicit one
         if (dataflow_links.empty() && !infer_dataflow())
-            assert(false && "Dataflow is empty and cannot be infered. Define an explicit one.");
+            assert(false && "Dataflow is empty and cannot be inferred. Define an explicit one.");
     }
 
     bool can_advance() override {
@@ -426,7 +426,7 @@ public:
         host_top_chunk_in_dataflow_links();
 
         // try to start one asynchronous operation (data transfer)
-        // (doesn't run multiple async operations due to the complexity of
+        // (does not run multiple async operations due to the complexity of
         // managing callbacks in such case)
         if (start_memory_transfer())
             return; // if the transfer does start, it will handle callback calling
@@ -496,10 +496,10 @@ private:
             Link_t& link = *link_ptr;
 
             if (link.envelope == &envelope)
-                return true; // yep, it's hosted here
+                return true; // yes, it is hosted here
         }
 
-        return false; // no it isn't hosted anywhere
+        return false; // no it is not hosted anywhere
     }
 
     /**
@@ -562,12 +562,12 @@ private:
             say("New chunk produced by: " + link.guest_node->label);
         }
         
-        // the production didn't happen, the envelope in the link remains empty
+        // the production did not happen, the envelope in the link remains empty
         else {
             // return the envelope back to empty envelopes
             empty_envelopes[link.device_index].push_back(link.envelope);
 
-            say("Chunk production wasn't commited, by: " + link.guest_node->label);
+            say("Chunk production was not commited, by: " + link.guest_node->label);
         }
 
         // take the envelope out of the link
@@ -594,7 +594,7 @@ private:
             if (link.envelope != nullptr)
                 continue;
 
-            // skip links that are on devices where the chunk hasn't been transfered yet
+            // skip links that are on devices where the chunk has not been transferred yet
             if (top_chunk.envelopes.count(link.device_index) == 0)
                 continue;
             
@@ -635,7 +635,7 @@ private:
                 // trash all envelopes except the one that was modified
                 for (auto const& x : top_chunk.envelopes) {
                     if (x.first == link.device_index)
-                        continue; // don't trash the modified envelope
+                        continue; // do not trash the modified envelope
                     trashed_envelopes.push_back(x.second);
                 }
 
@@ -683,22 +683,22 @@ private:
                 if (chunk.envelopes.count(target_device_index) == 1)
                     continue;
 
-                // if it's not present, we can start a transfer
+                // if it is not present, we can start a transfer
                 if (!dry_run) {
                     say("Transferring chunk to the device of node: " + link.guest_node->label);
 
-                    // get an envelope to which we'll copy the data
+                    // get an envelope to which we will copy the data
                     Envelope_t& target_env = obtain_envelope_for_transfer(
                         target_device_index
                     );
 
-                    // get an envelope from which we'll copy the data
+                    // get an envelope from which we will copy the data
                     Envelope_t& source_env = chunk.get_source_for_transfer(
                         target_device_index
                     );
 
                     // remember participating envelopes so that they
-                    // don't get freed up
+                    // do not get freed up
                     source_envelope_for_transfer = &source_env;
                     target_envelope_for_transfer = &target_env;
 
@@ -748,10 +748,10 @@ private:
     }
 
     /**
-     * Kills the program if we don't run in scheduler thread
+     * Kills the program if we do not run in scheduler thread
      */
     void guard_scheduler_thread() {
-        // do not guard if the pipeline isn't running
+        // do not guard if the pipeline is not running
         if (scheduler_thread_id == std::thread::id())
             return;
         
@@ -810,7 +810,7 @@ public:
 
     /**
      * Tries to find a link that points to given node and fails
-     * if there's none or multiple links
+     * if there is none or multiple links
      */
     Link_t& resolve_link_from_node(Node& node) {
         Link_t* resolved_link_ptr = nullptr;

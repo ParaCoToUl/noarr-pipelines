@@ -107,7 +107,7 @@ public:
     /**
      * Returns true, if the "callback()" method can be called.
      * Anotherwords the "advance" method has started and "callback"
-     * hasn't been called yet.
+     * has not been called yet.
      */
     bool can_call_callback() {
         return advance_callback != nullptr;
@@ -126,7 +126,7 @@ public:
         call the base class implementation. Which might break the base class
         logic if it needs to act during this event. Therefore the internal API
         is meant for internal node logic and it MUST CALL PARENT IMPLEMENTATIONS.
-        Whereas the external API are the final methods called and they don't need
+        Whereas the external API are the final methods called and they do not need
         to wory about inheritance.
     */
 

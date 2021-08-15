@@ -117,7 +117,7 @@ public:
             data_was_advanced = adv;
             callback_was_called();
         });
-        this->wait_for_callback(); // here's the synchronicity
+        this->wait_for_callback(); // here is the synchronicity
 
         if (data_was_advanced) {
             this->generation_advanced_data = true;
@@ -224,7 +224,7 @@ private:
         std::lock_guard<std::mutex> lock(this->_callback_mutext);
         
         assert(!this->_expecting_callback
-            && "Cannot expect a callback when the previous didn't finish.");
+            && "Cannot expect a callback when the previous did not finish.");
 
         this->_expecting_callback = true;
         this->_callback_was_called = false;
@@ -267,7 +267,7 @@ private:
                 return this->_callback_was_called;
             });
 
-            // we nolonger expect a callback
+            // we no longer expect a callback
             // (we can access the variable here, since we still own the lock
             // thanks to the previous "wait" method call)
             this->_expecting_callback = false;

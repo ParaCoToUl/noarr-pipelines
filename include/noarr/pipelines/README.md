@@ -7,7 +7,7 @@ This file is a documentation outline.
 
 Something the scheduler pokes. It can say whether it can advance data when poked.
 
-Node doesn't care about data - where it gets it, how it communicates with other nodes, etc... It only cares about computation.
+Node does not care about data - where it gets it, how it communicates with other nodes, etc... It only cares about computation.
 
 Compute nodes, hubs and links are higher-level objects that formalize the way nodes communicate with one another.
 

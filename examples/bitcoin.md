@@ -78,7 +78,7 @@ bool bitcoin(
                     salt.write_did_happen(); // chunk of data was produced
                 }
 
-                cudaSynchronize(node.cuda_stream, node.calback);
+                cudaSynchronize(node.cuda_stream, node.callback);
             });
 
             node.finalize([&](){

@@ -10,7 +10,7 @@
 
 **Description:**
 
-The input is a sequence of N images of various resolutions with a reasonable upper limit on the resolution (to allocate buffers). For each of these images a sobel operator is calculated and saved to the output as two images (vertical edges & horizontal edges). The two edge-detection kernels run in parallel, while reading from the same source image. All images are grayscale for simplicity. This algorithm is not exactly Sobel, but it's close enough.
+The input is a sequence of N images of various resolutions with a reasonable upper limit on the resolution (to allocate buffers). For each of these images a sobel operator is calculated and saved to the output as two images (vertical edges & horizontal edges). The two edge-detection kernels run in parallel, while reading from the same source image. All images are grayscale for simplicity. This algorithm is not exactly Sobel, but it is close enough.
 
 
 **Code:**
@@ -72,7 +72,7 @@ void sobel(const std::vector<std::string>& source_images) {
         node.advance([&](){
             // pseudo: run_horizontal_filter_kernel(image, horizontal_edges)
             
-            cudaSynchronize(node.cuda_stream, node.calback);
+            cudaSynchronize(node.cuda_stream, node.callback);
         });
 
         node.finalize([&](){

@@ -65,7 +65,7 @@ void sobel(const std::vector<std::string>& source_images) {
             // char min, max = run_reduction_kernel(adjusted_image.envelope)
             // run_adjusting_kernel(adjusted_image.envelope, min, max)
             
-            cudaSynchronize(node.cuda_stream, node.calback);
+            cudaSynchronize(node.cuda_stream, node.callback);
         });
     });
 
