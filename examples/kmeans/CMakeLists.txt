@@ -27,7 +27,7 @@ ExternalProject_Add(
     LOG_DOWNLOAD ON
     )
 ExternalProject_Get_Property(noarr-structures source_dir)
-set(NoarrStructuresIncludeDir ${source_dir}/noarr/include)
+set(NoarrStructuresIncludeDir ${source_dir}/include)
 
 # setup the test runner executable
 add_executable(kmeans main.cpp main.cu)

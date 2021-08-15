@@ -5,7 +5,7 @@
 #include <R.h>
 #include <R_ext/Rdynload.h>
 
-#include "../noarr-structures/noarr/include/noarr/structures_extended.hpp"
+#include "../noarr-structures/include/noarr/structures_extended.hpp"
 
 using MatrixStructureRows = noarr::vector<'m', noarr::vector<'n', noarr::scalar<int>>>;
 using MatrixStructureColumns = noarr::vector<'n', noarr::vector<'m', noarr::scalar<int>>>;
