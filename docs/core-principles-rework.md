@@ -32,14 +32,14 @@ An envelope has five main properties:
 
 Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub.
 
-The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 floats in each envelope:
+The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 chars in each envelope:
 
 ```cpp
 // Create a hub with envelopes with the following properties:
 // - Structure type:       std::size_t
-// - Buffer pointer type:  float
-// - Envelope size:        sizeof(float) * 1024
-auto my_hub = noarr::pipelines::Hub<std::size_t, float>(sizeof(float) * 1024);
+// - Buffer pointer type:  char
+// - Envelope size:        sizeof(char) * 1024
+auto my_hub = noarr::pipelines::Hub<std::size_t, char>(sizeof(char) * 1024);
 
 // Allocate 4 envelopes, 2 on each device
 // Host = CPU memory (RAM)
@@ -51,10 +51,50 @@ my_hub.allocate_envelopes(noarr::pipelines::Device::DEVICE_INDEX, 2);
 
 ## Compute nodes
 
+Pipeline *nodes* operate using two methods: `can_advance` and `advance`. Each node has its own implementation of these two methods. The pipeline has one scheduler that monitors all the nodes and periodically asks each of them whether it `can_advance`. If the response is positive, the scheduler will call the `advance` method.
+
+> **Note:** *Advance* means *to advance data through the pipeline*.
+
+The `advance` method is meant to start an asychronous operation that does not block. When the scheduler calls the `advance` method, it begins to treat the node as *working*. The node will remain in this state until it calls the `callback` method. The `callback` should be called when the asychronous operation finishes, to signal the node becoming *idle*. The scheduler will never call `can_advance` and `advance` on a *working* node, only on an *idle* one.
+
+> **Note:** Tracking the *idle/working* state of each node is the responsibility of the scheduler. Depending on the implementation of the scheduler, this tracking may be implicit in the scheduling logic.
+
+When we create a custom *node*, we typically want to perform a computation and in doing so we want to produce or consume chunks in some hubs. We only want to start our computation when we know that all the linked hubs are ready to serve or accept the data. We could perform these checks in the `can_advance` method, but it would quickly get repetitive. For this reason we define *compute nodes*. A *compute node* is like a regular *node*, but it knows about all the *links* to hubs and only *advances* when all of these *links* are ready.
+
+The following code shows a *compute node*, linked to the hub from the previous code snippet. The compute node consumes chunks from the hub and prints their content as text to the screen:
+
+```cpp
+// create a compute node that has its methods defined using lambda expressions
+auto my_node = noarr::pipelines::LambdaComputeNode("writer");
+
+// link the compute node to my_hub
+// (to consume chunks from the host device)
+auto& my_link = my_node.link(my_hub.to_consume(Device::HOST_INDEX));
+
+// define the advance method:
+my_node.advance([&](){
+    
+    // the hub provides access to an envelope via my_link.envelope,
+    // the envelope contains data of the latest chunk (since we want to consume)
+
+    // the structure property holds the length of the char array
+    std::size_t array_size = my_link.envelope->structure;
+
+    // the pointer to the char array
+    char* buffer_pointer = my_link.envelope->buffer;
+
+    // print to the screen
+    std::cout << std::string(buffer_pointer, array_size) << std::endl;
+
+    // The advance method assumes you start an asynchronous operation that
+    // will signal its completion by calling back. We did not do that,
+    // but we still need to call back.
+    writer.callback();
+});
+```
+
 TODO...
 
-- how does a compute node "compute"? (the advance method and concurrency)
-- how **exactly** is the data accessed via the link (user's perspective - an envelope)
 - scheduler in detail (scheduling algorithm)
 
 
