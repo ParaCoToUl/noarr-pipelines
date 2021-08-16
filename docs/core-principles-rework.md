@@ -57,6 +57,8 @@ Pipeline *nodes* operate using two methods: `can_advance` and `advance`. Each no
 
 The `advance` method is meant to start an asychronous operation that does not block. When the scheduler calls the `advance` method, it begins to treat the node as *working*. The node will remain in this state until it calls the `callback` method. The `callback` should be called when the asychronous operation finishes, to signal the node becoming *idle*. The scheduler will never call `can_advance` and `advance` on a *working* node, only on an *idle* one.
 
+> **Note:** The `callback` method can be called from any thread, it is designed to handle that.
+
 > **Note:** Tracking the *idle/working* state of each node is the responsibility of the scheduler. Depending on the implementation of the scheduler, this tracking may be implicit in the scheduling logic.
 
 When we create a custom *node*, we typically want to perform a computation and in doing so we want to produce or consume chunks in some hubs. We only want to start our computation when we know that all the linked hubs are ready to serve or accept the data. We could perform these checks in the `can_advance` method, but it would quickly get repetitive. For this reason we define *compute nodes*. A *compute node* is like a regular *node*, but it knows about all the *links* to hubs and only *advances* when all of these *links* are ready.
@@ -122,6 +124,8 @@ scheduler.run();
 
 The scheduler calls `can_advance` on all nodes, trying to get them to advance. If all the nodes are *idle* and also respond negatively to `can_advance`, it means there are no nodes to be advanced and the pipeline terminates.
 
+The library currently provides only the `DebuggingScheduler` whose implementation is described in a [later section on debugging](#debugging). It is possible to add more sophisticated schedulers later.
+
 Each node can perform some action during the pipeline initialization and termination by using the corresponding event methods:
 
 ```cpp
@@ -163,16 +167,74 @@ my_other_node.post_advance([&](){
 ```
 
 
-## Overview of terms
+## Debugging
 
-- bullet points of all the terms
-    - node
-    - compute node
-    - hub
-    - chunk (abstractly / concretely in a hub)
-    - link
-    - envelope
-    - advance
-    - callback
-    - scheduler
-    - scheduler thread
+Since a pipeline is a complicated computational model, it is oftentimes difficult to troubleshoot problems. One of the tools you have at your disposal is the debugging scheduler:
+
+```cpp
+auto scheduler = noarr::pipelines::DebuggingScheduler(std::cout);
+```
+
+It has the feature that it never runs two nodes simultaneously. It loops over the pipeline nodes in the order they were registered and tries to advance them one by one. One iteration of this loop is called a generation.
+
+Here is roughly how the debugging scheduler operates:
+
+```cpp
+void noarr::pipelines::DebuggingScheduler::run() {
+    
+    // pipeline initialization
+    for (auto& node : pipeline_nodes)
+        node.initialize();
+
+    // the main loop, one iteration of which is called a generation
+    bool generation_advanced_data;
+    do {
+        generation_advanced_data = false;
+
+        // try to advance each node
+        for (auto& node : pipeline_nodes) {
+            if (node.can_advance()) {
+                node.advance();
+                node.wait_for_callback(); // be synchronous
+                generation_advanced_data = true;
+            }
+        }
+    } while (generation_advanced_data)
+
+    // pipeline termination
+    for (auto& node : pipeline_nodes)
+        node.terminate();
+}
+```
+
+If you provide an output stream to the scheduler constructor, it will log many interesting events to it. Going through the log may help you diagnose problems quicker, than by using a traditional debugger.
+
+Each pipeline node has a label that is used in the log. You can set a label for a compute node during construction:
+
+```cpp
+auto my_node = LambdaComputeNode("my_node");
+```
+
+Sometimes you would also like to see, what is happening inside a hub (how is the data transferred). You can do this by enabling logging for the hub in a similar way to the scheduler:
+
+```cpp
+my_hub.start_logging(std::cout);
+```
+
+
+## Overview of the terms
+
+This is a short overview of all the important terms defined in the text of this section.
+
+- **Node**: Basic building block of the pipeline. It can be *advanced* by the scheduler to perform some computation.
+- **Compute node**: Node specialized for computation. It can be advanced only when all its *links* are ready.
+- **Hub**: Node specialized for memory management. It handles allocations and memory transfers between hardware devices.
+- **Chunk**:
+    - *Pipeline perspective*: A smaller piece of the input dataset that can fit into memory and can be passed through the pipeline.
+    - *Hub perspective:* A set of envelopes on different devices, all holding the exact same data.
+- **Link**: An entity that mediates the exchange of data between a hub and a compute node.
+- **Envelope**: Holder for data, with some structure and located on some hardware device. Also the thing that is accessed through a link. Also the representation of a chunk on one specific device.
+- **Advance**: When a *node* advances, it runs some computation. That computation does a piece of the work of *advancing* data through the pipeline.
+- **Callback**: The method to call to signal the end of a node's *advance* operation.
+- **Scheduler**: Is responsible for calling *advance* methods of pipeline nodes.
+- **Scheduler thread**: The thread that calls `scheduler.run()`. It is safe to access shared variables from code running in this thread.
