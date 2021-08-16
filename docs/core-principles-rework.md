@@ -1,26 +1,72 @@
 # Core principles
 
+The noarr pipelines library aims to provide a framework for building computational *pipelines* for GPGPU computing. These *pipelines* are designed to process data that would not fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
+
 
 ## Basics
 
-The noarr pipelines library aims to provide a framework for building computational pipelines for GPGPU computing. These pipelines are designed to process data that would not fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
-
-The pipeline is composed of *nodes* - independent units that perform a piece of the computation. Imagine that we have a text file that we want to convert to another file with all the letters capitalized. The entire file would not fit in memory, but we can say that one line of text easily would. We could process the file line by line, thereby streaming the whole process. The pipeline would have one *node* responsible for reading lines of text, another *node* for performing the capitalization and another one for writing capitalized lines to an output file. This kind of separation lets all nodes run concurrently and increases the overall throughput of the system. We could also imagine, that the capitalization process was expensive and we would like to run it on the GPU.
+The *pipeline* is composed of *nodes* - independent units that perform a piece of the computation. Imagine that we have a text file where we want to capitalize all the letters and save the result to another file. The entire file would not fit in memory, but we can say that one line of text easily would. We could process the file line by line, thereby streaming the whole process. The pipeline would have one *node* responsible for reading lines of text, another *node* for performing the capitalization and another one for writing capitalized lines to the output file. This kind of separation lets all nodes run concurrently and increases the overall throughput of the system. We could also imagine, that the capitalization process was expensive and we would like to run it on the GPU.
 
 > **Note:** The described task is implemented in the `upcase` example and can be found [here](../examples/upcase).
 
-We described a scenario where we have *compute nodes* on different devices (GPU, CPU) but we need a way to transfer data between them. For this purpose we will create a special type of node called a *hub*. A hub can be imagined as a queue of chunks of data (lines of text in our example). We can produce new chunks by writing into it and consume chunks by reading from it. We can then put one *hub* in between each of our *compute nodes* to serve as the queue in the classic producer-consumer pattern. This gives us the following pipeline:
+We described a scenario where we have *compute nodes* on different devices (GPU, CPU) but we need a way to transfer data between them. For this purpose we will create a special type of node called a *hub*. A *hub* can be imagined as a queue of chunks of data (lines of text in our example). We can produce new chunks by writing into it and consume chunks by reading from it. We can then put one *hub* in between each of our *compute nodes* to serve as the queue in the classic producer-consumer pattern. This gives us the following pipeline:
 
     [reader] --> {reader_hub} --> [capitalizer] --> {writer_hub} --> [writer]
        |                                                                |
     input.txt                                                      output.txt
 
-*Compute nodes* will be joined to *hubs* by something called a *link*. A link can then hold various metadata used by both sides, like its type (producing / consuming chunks in the hub) or the device on which the *compute node* expects the data to be received. Remember that we imagined the capitalizer to be a GPU kernel. It wants to receive data already located in the GPU memory. The *hub* that provides the data may already handle the memory transfer for us.
+A *compute node* is joined to a *hub* by something called a *link*. A *link* mediates the exchange of data between both sides and it also holds various metadata, like its type (producing / consuming) or the device index on which the *compute node* expects the data to be received. Remember that we imagined the capitalizer to be a GPU kernel. It wants to receive data located in the GPU memory. The *hub* handles the memory transfer for us.
+
+
+## Envelopes
+
+When a chunk of data enters a *hub*, it is located on one device (say the host). When the same chunk exits the hub, it may be located on another device (say the GPU device). Therefore a chunk of data in a hub might be present on multiple devices simultaneously. We call one of these instances an *envelope*. It is guaranteed that all *envelopes* of one chunk hold the exact same data. When a new chunk is inserted into a hub, it has only one envelope. When the chunk is requested by another device, a new envelope is obtained on that device and the data is copied into it. When the chunk is consumed from the hub, all the envelopes are freed up.
+
+An envelope has five main properties:
+
+- **Buffer pointer**: This pointer points to the buffer containing the data of the envelope.
+- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data.
+- **Device index**: This value describes the location of the data (host memory or GPU memory).
+- **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope.
+- **Type**: The type of the envelope is the value of two template parameters, the first specifies the type of the *structure* property (e.g. `std::size_t`, `std::array<std::size_t, 2>`) and the second specifies the type of the *buffer pointer* (e.g. `float`, `pixel_t`, `char`, `void`).
+
+Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub.
+
+The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 floats in each envelope:
+
+```cpp
+// Create a hub with envelopes with the following properties:
+// - Structure type:       std::size_t
+// - Buffer pointer type:  float
+// - Envelope size:        sizeof(float) * 1024
+auto my_hub = noarr::pipelines::Hub<std::size_t, float>(sizeof(float) * 1024);
+
+// Allocate 4 envelopes, 2 on each device
+// Host = CPU memory (RAM)
+// Device = GPU memory
+my_hub.allocate_envelopes(noarr::pipelines::Device::HOST_INDEX, 2);
+my_hub.allocate_envelopes(noarr::pipelines::Device::DEVICE_INDEX, 2);
+```
+
+
+## Compute nodes
 
 TODO...
 
 - how does a compute node "compute"? (the advance method and concurrency)
-- what is an envelope
-- what **exactly** is a chunk
 - how **exactly** is the data accessed via the link (user's perspective - an envelope)
 - scheduler in detail (scheduling algorithm)
+
+
+## Overview of terms
+
+- bullet points of all the terms
+    - node
+    - compute node
+    - hub
+    - chunk (abstractly / concretely in a hub)
+    - link
+    - envelope
+    - advance
+    - callback
+    - scheduler
