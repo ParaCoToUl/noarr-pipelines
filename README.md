@@ -31,9 +31,9 @@ target_link_libraries(<my-app> PRIVATE Threads::Threads)
 ```
 
 
-## Running tests and examples
+## Running tests
 
-Enter the desired folder (e.g. `examples/kmeans`, `tests/pipelines`, ...). In the terminal (linux bash, windows cygwin or gitbash) run the following commands:
+Enter the tests folder (`tests/pipelines` or `tests/cuda-pipelines`). In the terminal (linux bash, windows cygwin or gitbash) run the following commands:
 
 ```sh
 # create and enter the folder that will contain the build files
@@ -48,23 +48,19 @@ cmake --build .
 
 # run the built executable
 # (this step differs by platform, this example is for linux)
-./kmeans || ./test-runner
+./test-runner
 ```
-
-On MFF gpulab, prefix all commands with `srun` to run them on slurm. And for
-cuda code, prefix with e.g. `srun -p volta-hp --gpus=1` to have a GPU available.
-More info here: https://gitlab.mff.cuni.cz/ksi/clusters
 
 
 ## TODO
 
 - `[x]` docs: core principles
-- `[x]` docs: compute node
+- `[~]` docs: compute node
 - `[~]` docs: hub
 - `[x]` cuda
-- `[ ]` kmeans example with cuda
+- `[x]` kmeans example with cuda
 - `[ ]` docs: cuda pipelines
 - `[ ]` docs: hardware manager
 - `[ ]` python bindings template
-- `[ ]` R bindings template
+- `[~]` R bindings template
 - `[ ]` some todo notes in the code and the docs, search for "TODO"

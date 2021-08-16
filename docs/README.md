@@ -1,5 +1,7 @@
 # Noarr Documentation
 
+**TODO: this should become the table of contents for structures, not the entire noarr**
+
 Here is the top-level structure of the entire documentation for Noarr. This is how all the `.md` files will be combined into one PDF document + it wil act as a table of contents with hyperlinks to individual parts:
 
 - Introduction `(what is structures/pipelines, when to use which, note about bindings)`

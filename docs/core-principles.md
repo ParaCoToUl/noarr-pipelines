@@ -1,133 +1,170 @@
 # Core principles
 
+The noarr pipelines library aims to provide a framework for building computational *pipelines* for GPGPU computing. These *pipelines* are designed to process data that would not fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
+
 
 ## Basics
 
-Noarr pipelines aims to provide a framework for building computational pipelines for GPGPU computing. These pipelines are designed to process data that would not fit into GPU memory in one batch and needs to be streamed. The user has to define a way to break the data down to a sequence of smaller chunks, process individual chunks and then re-assemble the result from those chunks.
+The *pipeline* is composed of *nodes* - independent units that perform a piece of the computation. Imagine that we have a text file where we want to capitalize all the letters and save the result to another file. The entire file would not fit in memory, but we can say that one line of text easily would. We could process the file line by line, thereby streaming the whole process. The pipeline would have one *node* responsible for reading lines of text, another *node* for performing the capitalization and another one for writing capitalized lines to the output file. This kind of separation lets all nodes run concurrently and increases the overall throughput of the system. We could also imagine, that the capitalization process was expensive and we would like to run it on the GPU.
 
-The core conceptual unit of a pipeline is a *compute node*. It is an entity that receives one chunk of data and is triggered to perform a computation on that chunk. The computation can produce a new chunk, modify the existing or perform an aggregation or do any combination of these actions.
+> **Note:** The described task is implemented in the `upcase` example and can be found [here](../examples/upcase).
+
+We described a scenario where we have *compute nodes* on different devices (GPU, CPU) but we need a way to transfer data between them. For this purpose we will create a special type of node called a *hub*. A *hub* can be imagined as a queue of chunks of data (lines of text in our example). We can produce new chunks by writing into it and consume chunks by reading from it. We can then put one *hub* in between each of our *compute nodes* to serve as the queue in the classic producer-consumer pattern. This gives us the following pipeline:
+
+    [reader] --> {reader_hub} --> [capitalizer] --> {writer_hub} --> [writer]
+       |                                                                |
+    input.txt                                                      output.txt
+
+A *compute node* is joined to a *hub* by something called a *link*. A *link* mediates the exchange of data between both sides and it also holds various metadata, like its type (producing / consuming) or the device index on which the *compute node* expects the data to be received. Remember that we imagined the capitalizer to be a GPU kernel. It wants to receive data located in the GPU memory. The *hub* handles the memory transfer for us.
+
+
+## Envelopes
+
+When a chunk of data enters a *hub*, it is located on one device (say the host). When the same chunk exits the hub, it may be located on another device (say the GPU device). Therefore a chunk of data in a hub might be present on multiple devices simultaneously. We call one of these instances an *envelope*. It is guaranteed that all *envelopes* of one chunk hold the exact same data. When a new chunk is inserted into a hub, it has only one envelope. When the chunk is requested by another device, a new envelope is obtained on that device and the data is copied into it. When the chunk is consumed from the hub, all the envelopes are freed up.
+
+An envelope has five main properties:
+
+- **Buffer pointer**: This pointer points to the buffer containing the data of the envelope.
+- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data.
+- **Device index**: This value describes the location of the data (host memory or GPU memory).
+- **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope.
+- **Type**: The type of the envelope is the value of two template parameters, the first specifies the type of the *structure* property (e.g. `std::size_t`, `std::array<std::size_t, 2>`) and the second specifies the type of the *buffer pointer* (e.g. `float`, `pixel_t`, `char`, `void`).
+
+Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub.
+
+The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 chars in each envelope:
 
 ```cpp
-// create a compute node
-auto my_compute_node = LambdaAsyncComputeNode();
+// Create a hub with envelopes with the following properties:
+// - Structure type:       std::size_t
+// - Buffer pointer type:  char
+// - Envelope size:        sizeof(char) * 1024
+auto my_hub = noarr::pipelines::Hub<std::size_t, char>(sizeof(char) * 1024);
 
-// link the compute node to a hub
-// with the goal of modifying chunks in the hub
-auto& link_to_hub = my_compute_node.link(some_hub.to_modify(Device::HOST_INDEX));
+// Allocate 4 envelopes, 2 on each device
+// Host = CPU memory (RAM)
+// Device = GPU memory
+my_hub.allocate_envelopes(noarr::pipelines::Device::HOST_INDEX, 2);
+my_hub.allocate_envelopes(noarr::pipelines::Device::DEVICE_INDEX, 2);
+```
 
-// define what happens when the compute node is triggered
-my_compute_node.advance([&](){
+
+## Compute nodes
+
+Pipeline *nodes* operate using two methods: `can_advance` and `advance`. Each node has its own implementation of these two methods. The pipeline has one scheduler that monitors all the nodes and periodically asks each of them whether it `can_advance`. If the response is positive, the scheduler will call the `advance` method.
+
+> **Note:** *Advance* means *to advance data through the pipeline*.
+
+The `advance` method is meant to start an asychronous operation that does not block. When the scheduler calls the `advance` method, it begins to treat the node as *working*. The node will remain in this state until it calls the `callback` method. The `callback` should be called when the asychronous operation finishes, to signal the node becoming *idle*. The scheduler will never call `can_advance` and `advance` on a *working* node, only on an *idle* one.
+
+> **Note:** The `callback` method can be called from any thread, it is designed to handle that.
+
+> **Note:** Tracking the *idle/working* state of each node is the responsibility of the scheduler. Depending on the implementation of the scheduler, this tracking may be implicit in the scheduling logic.
+
+When we create a custom *node*, we typically want to perform a computation and in doing so we want to produce or consume chunks in some hubs. We only want to start our computation when we know that all the linked hubs are ready to serve or accept the data. We could perform these checks in the `can_advance` method, but it would quickly get repetitive. For this reason we define *compute nodes*. A *compute node* is like a regular *node*, but it knows about all the *links* to hubs and only *advances* when all of these *links* are ready.
+
+The following code shows a *compute node*, linked to the hub from the previous code snippet. The compute node consumes chunks from the hub and prints their content as text to the screen:
+
+```cpp
+// create a compute node that has its methods defined using lambda expressions
+auto my_node = noarr::pipelines::LambdaComputeNode("my_node");
+
+// link the compute node to my_hub
+// (to consume chunks from the host device)
+auto& my_link = my_node.link(my_hub.to_consume(Device::HOST_INDEX));
+
+// define the advance method:
+my_node.advance([&](){
     
-    // get the envelope holding the actual data chunk
-    auto& env = *link.envelope;
+    // the hub provides access to an envelope via my_link.envelope,
+    // the envelope contains data of the latest chunk (since we want to consume)
 
-    // modify the data in place
-    for (std::size_t i = 0; i < env.structure; ++i)
-        env.buffer[i] *= 2;
+    // the structure property holds the length of the char array
+    std::size_t array_size = my_link.envelope->structure;
+
+    // the pointer to the char array
+    char* buffer_pointer = my_link.envelope->buffer;
+
+    // print to the screen
+    std::cout << std::string(buffer_pointer, array_size) << std::endl;
+
+    // The advance method assumes you start an asynchronous operation that
+    // will signal its completion by calling back. We did not do that,
+    // but we still need to call back.
+    writer.callback();
 });
 ```
 
-Chunks, that compute nodes work with, come from so called *hubs*. A hub can naively be thought of as a buffer that can store a chunk of data. When a compute node triggers, it has access to a set of hubs with which it can interact. This set of hubs and the way the node will interact with them is specified in advance as a set of *links*.
-
-A hub is actually not a single buffer but multiple, spread across multiple devices. This is because hub also provides inter-device memory transfer - e.g. one compute node can write to the hub from CPU and another one can read the data from GPU. One of these internal buffers is called an *envelope*. So a compute node accessing a hub through a link actually interacts only with a single envelope, not the entire hub.
-
-An envelope has two main parts: 1) the structure 2) the data. The structure tells the user what shape the data in the envelope has. It is the length for arrays, dimensions for images, etc... The data portion of the envelope contains a continuous binary blob of data that the user has to navigate through based on the structure. The envelope has a pre-allocated buffer with a specific size and the user data may never be larger that the allocated size. An envelope also has device it lives on. You can have one envelope in the GPU memory and another in the RAM.
+The *compute node* above does not have the `can_advance` method defined. It does not need one, since it only depends on the presence of chunks in `my_hub`. If we had a producing node, we could define the method like this:
 
 ```cpp
-// An example envelope containing an array of floats, where the structure of the
-// envelope is a std::size_t coding the length of the array.
+std::size_t chunks_produced = 0;
+std::size_t total_input_chunks = 420;
 
-// API: Envelope<Structure, BufferItem>
-
-Envelope<std::size_t, float> env = ...;
-env.structure = 3; // the envelope will contain 3 items
-env.buffer[0] = 12.5f; // set these items
-env.buffer[1] = 8.2f;
-env.buffer[2] = 0.1f;
+my_other_node.can_advance([&](){
+    return chunks_produced < total_input_chunks;
+});
 ```
-
-
-## Producer-consumer example
-
-The following code is a simple producer-consumer example. One compute node produces chunks of data. One chunk of data is a single line of text from the standard input. It writes these chunks into a central hub. The consumer compute node then reads chunks from the central hub and prints them to the screen.
-
-```cpp
-// API: Hub<Structure, BufferItem>(envelope_size_in_bytes);
-auto line_hub = Hub<std::size_t, char>(sizeof(char) * 1024);
-line_hub.allocate_envelopes(Device::HOST_INDEX, 2);
-
-// global variable, used by the producer to stop
-bool finished = false;
-
-auto producer = LambdaAsyncComputeNode(); {
-    auto& line_link = producer.link(line_hub.to_produce(
-        Device::HOST_INDEX, // the link wants to access the data from the CPU
-        false // a chunk may sometimes not be produced - disable auto-commit
-    ));
-
-    // when can the producer node be triggered?
-    producer.can_advance([&](){
-        return !finished;
-    });
-
-    producer.advance([&](){
-        std::string text;
-        bool success = std::getline(std::cin, text);
-        if (success) {
-            line_link.envelope->structure = text.length();
-            text.copy(line_link.envelope->buffer, text.length());
-            line_link.commit(); // chunk was actually produced
-        } else {
-            finished = true; // there will be no further chunks
-        }
-    });
-}
-
-auto consumer = LambdaAsyncComputeNode(); {
-    auto& line_link = consumer.link(line_hub.to_consume(Device::HOST_INDEX));
-
-    consumer.advance([&](){
-        std::string text(
-            line_link.envelope->buffer,
-            line_link.envelope->structure
-        );
-        std::cout << "CONSUMER GOT: " << text << std::endl;
-    });
-}
-```
-
-> **Caution:** Be careful about declaring variables in the braced compute node body. Their lifetime may be shorter than the lifetime of provided lambda expressions. Usually, declare only links there and only as references. Passing a reference by reference to a lambda will actually copy the underlying pointer and the lifetime issue is not an issue.
-
-> **Note:** There is also an alternative inheritance-based API if your pipeline is more complicated or you do not like this lambda-based API.
 
 
 ## Scheduling
 
-Once you define your pipeline, you need a scheduler to trigger individual pipeline nodes. Here is the code for the example above:
+In the code snippets above you learned how to define hubs and compute nodes. The last thing that remains is adding a scheduler and letting it run the pipeline to completion:
 
 ```cpp
-auto scheduler = DebuggingScheduler();
-scheduler.add(link_hub);
-scheduler.add(producer);
-scheduler.add(consumer);
+noarr::pipelines::DebuggingScheduler scheduler;
+scheduler.add(my_hub);
+scheduler.add(my_node);
+scheduler.add(my_other_hub);
+scheduler.add(my_other_node);
 
-scheduler.run(); // runs the pipeline to completion
+// run the pipeline to completion
+scheduler.run();
 ```
 
-The scheduler has a list of nodes it tries to trigger, but before it triggers a node, it first asks it, whether it has some work to do. This asking is realized by the `can_advance` function. If the function returns `true`, the scheduler invokes the `advance` method that does the actual computation. When the scheduler has no nodes that can be advanced (all return `false`), it recognizes the situation as the end of computation and finishes.
+The scheduler calls `can_advance` on all nodes, trying to get them to advance. If all the nodes are *idle* and also respond negatively to `can_advance`, it means there are no nodes to be advanced and the pipeline terminates.
 
-> **Note:** *Advance* means to *advance data through the pipeline*.
+The library currently provides only the `DebuggingScheduler` whose implementation is described in a [later section on debugging](#debugging). It is possible to add more sophisticated schedulers later.
 
-You may have noticed that we did not provide the `can_advance` function for the consumer node in our example above. This is because a *compute node* is somewhat special, compared to a generic pipeline node. A *compute node* has the added constraint that it cannot be advanced, unless all of its links are ready (have an envelope prepared). This is enough to condition our consumer - it consumes chunks as long as there are chunks to consume.
+Each node can perform some action during the pipeline initialization and termination by using the corresponding event methods:
 
-A *hub* is also a pipeline node, triggered by the scheduler like any other node. But you do not need to worry about this from the user perspective.
+```cpp
+my_other_node.initialize([&](){
+    // e.g. open a file to read
+});
+
+my_other_node.terminate([&](){
+    // e.g. close the file
+});
+```
+
+
+## Introductory example
+
+This section talks about the absolute basics of noarr pipelines. You can read through the `upcase` example located [here](../examples/upcase) to see all these concepts put together.
 
 
 ## Multithreading
 
-The thread that calls `scheduler.run()` is called the *scheduler thread*. It is important, because it is guaranteed that all important synchronization events (like the `can_advance` invocation) happen on the scheduler thread. This lets you to not worry about locks and other synchronization primitives.
+We said that the `advance` method starts an ansynchronous non-blocking operation that ends by calling the `callback`, but all the examples so far were synchronous. This was only to get the basic concepts across and to keep the code simple. A more realistic way to create *compute nodes* is to extend the `AsyncComputeNode` or the `CudaComputeNode`. Both of these nodes extend the `advance` method in ways that allow it to be non-blocking. The `AsyncComputeNode` provides an `advance_async` method whose content is executed by a background thread. The `CudaComputeNode` provides an `advance_cuda` method that also runs in a background thread and finishes when a corresponding cuda stream gets emptied.
 
-There are different types of compute nodes that run their computation in different contexts, but the `AsyncComputeNode` for example has four important methods: `can_advance`, `advance`, `advance_async`, `post_advance`. All of these methods, except for `advance_async` run on the scheduler thread and make it easy for you to access and modify any global state. The `advance_async` method then runs in a background thread and can perform some heavy computation without blocking the scheduler thread. But you have to make sure you do not access global variables, that could be simultaneously accessed by other nodes from there.
+By introducing additional threads we need to start worrying about synchronization of access to shared variables. Noarr pipelines solves this in a way that does not require the use of locks.
+
+> **Note:** By a shared variable we mean any variable that is acessed by two different nodes. Hubs are not considered shared variables since they are designed to be accessed by multiple nodes simulatenously.
+
+The thread that calls `scheduler.run()` is called the *scheduler thread*. The methods `can_advance`, `advance`, `initialize` and `terminate` all run in this thread. This makes the code in these methods safe to access any shared variables, because executions of these methods will never overlap. On the other hand, methods like `advance_async` and `advance_cuda` are dangerous and should only access variables unique to the node.
+
+> **Note:** A variable accessed by different methods of one node is not a shared varibale, because different methods of the node cannot run concurrently (even `can_advance` is not called, when the node is *working*).
+
+By using methods like `advance_async` we gain performance by spreading the load over multiple threads. But we also prevent ourselves from accessing shared variables. To solve this issue we have a method called `post_advance`. This method is guaranteed to be called when the asynchronous operation finishes, just before the node becomes *idle* and it runs in the *scheduler thread*. We can modify any shared variables from this method:
+
+```cpp
+std::size_t chunks_produced = 0;
+
+my_other_node.post_advance([&](){
+    chunks_produced += 1;
+});
+```
 
 
 ## Debugging
@@ -135,17 +172,47 @@ There are different types of compute nodes that run their computation in differe
 Since a pipeline is a complicated computational model, it is oftentimes difficult to troubleshoot problems. One of the tools you have at your disposal is the debugging scheduler:
 
 ```cpp
-auto scheduler = DebuggingScheduler(std::cout);
+auto scheduler = noarr::pipelines::DebuggingScheduler(std::cout);
 ```
 
-It has the feature that it never runs two nodes in parallel. It loops over pipeline nodes in the order they were registered and tries to advance them one by one. One iteration of this loop is called a generation.
+It has the feature that it never runs two nodes simultaneously. It loops over the pipeline nodes in the order they were registered and tries to advance them one by one. One iteration of this loop is called a generation.
 
-If you provide an output stream to the scheduler, it will log many interesting events to it. Going through the log may help you diagnose problems quicker, than by using a traditional debugger.
+Here is roughly how the debugging scheduler operates:
+
+```cpp
+void noarr::pipelines::DebuggingScheduler::run() {
+    
+    // pipeline initialization
+    for (auto& node : pipeline_nodes)
+        node.initialize();
+
+    // the main loop, one iteration of which is called a generation
+    bool generation_advanced_data;
+    do {
+        generation_advanced_data = false;
+
+        // try to advance each node
+        for (auto& node : pipeline_nodes) {
+            if (node.can_advance()) {
+                node.advance();
+                node.wait_for_callback(); // be synchronous
+                generation_advanced_data = true;
+            }
+        }
+    } while (generation_advanced_data)
+
+    // pipeline termination
+    for (auto& node : pipeline_nodes)
+        node.terminate();
+}
+```
+
+If you provide an output stream to the scheduler constructor, it will log many interesting events to it. Going through the log may help you diagnose problems quicker, than by using a traditional debugger.
 
 Each pipeline node has a label that is used in the log. You can set a label for a compute node during construction:
 
 ```cpp
-auto my_node = LambdaAsyncComputeNode("my-node");
+auto my_node = LambdaComputeNode("my_node");
 ```
 
 Sometimes you would also like to see, what is happening inside a hub (how is the data transferred). You can do this by enabling logging for the hub in a similar way to the scheduler:
@@ -155,18 +222,19 @@ my_hub.start_logging(std::cout);
 ```
 
 
-## Nodes and envelope hosting
+## Overview of the terms
 
-From the scheduler's point of view it does not matter where the data in the pipeline comes from. It just advances nodes when they can be advanced. But since we typically think of programs as having a data-structure and an algorithm, we devised two types of nodes: hubs and compute nodes. There is currently no need to develop other kinds of data-holding nodes, but if that was to become a need, this section describes the conceptual framework.
+This is a short overview of all the important terms defined in the text of this section.
 
-Data is exchanged between nodes via links. There is the node that owns the data - the *host*. And the node that acts on the provided data - the *guest* (e.g. the hub hosts envelopes to compute nodes). This terminology governs the structure of a link.
-
-A links starts out with no envelope attached. It is the host's responsibility to acquire an envelope and attach it to the link. Whether the envelope contains data or not depends on the host and the link type can be used to guide the decision. The moment an envelope is attached by the host, the link transitions to a *fresh* state. Now it is the guest's turn. Guest can look at the envelope and do with it what it sees fit. Once the guest is done, it switches the link to a *processed* state. Now the host can detach the envelope and continue working with it. This is how one node can lend an envelope to another node.
-
-Apart from the link state and the attached envelope, the link also has additional information present that may or may not be used by both interacting sides. The link has a type and it has a *committed* flag. There are four types of links: producing, consuming, peeking and modifying. These types describe the kind of interaction the guest wants to make with the data. When producing, the host provides an empty envelope and guest fills it with data. The opposite happens during consumption. During peeking and modification the host provides some existing data to the guest, who can either look at or modify the data. The *committed* flag is set by the guest during production, consumption or modification to signal that the action was in fact performed. This lets the guest to e.g. not consume a chunk of data if it does not like the chunk.
-
-A link also has an *autocommit* flag that simply states that the action will be committed automatically when the envelope lending finishes. If this flag is set to `false`, the guest node has to manually call a `commit()` method before finishing the envelope lending.
-
-The link also has an associated device, that specifies on which device should the hosted envelope exist.
-
-To learn more about the envelope hosting interplay, read the `Link.hpp` file and the `ComputeNode.hpp` file.
+- **Node**: Basic building block of the pipeline. It can be *advanced* by the scheduler to perform some computation.
+- **Compute node**: Node specialized for computation. It can be advanced only when all its *links* are ready.
+- **Hub**: Node specialized for memory management. It handles allocations and memory transfers between hardware devices.
+- **Chunk**:
+    - *Pipeline perspective*: A smaller piece of the input dataset that can fit into memory and can be passed through the pipeline.
+    - *Hub perspective:* A set of envelopes on different devices, all holding the exact same data.
+- **Link**: An entity that mediates the exchange of data between a hub and a compute node.
+- **Envelope**: Holder for data, with some structure and located on some hardware device. Also the thing that is accessed through a link. Also the representation of a chunk on one specific device.
+- **Advance**: When a *node* advances, it runs some computation. That computation does a piece of the work of *advancing* data through the pipeline.
+- **Callback**: The method to call to signal the end of a node's *advance* operation.
+- **Scheduler**: Is responsible for calling *advance* methods of pipeline nodes.
+- **Scheduler thread**: The thread that calls `scheduler.run()`. It is safe to access shared variables from code running in this thread.
