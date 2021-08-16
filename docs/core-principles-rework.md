@@ -65,7 +65,7 @@ The following code shows a *compute node*, linked to the hub from the previous c
 
 ```cpp
 // create a compute node that has its methods defined using lambda expressions
-auto my_node = noarr::pipelines::LambdaComputeNode("writer");
+auto my_node = noarr::pipelines::LambdaComputeNode("my_node");
 
 // link the compute node to my_hub
 // (to consume chunks from the host device)
@@ -93,9 +93,74 @@ my_node.advance([&](){
 });
 ```
 
-TODO...
+The *compute node* above does not have the `can_advance` method defined. It does not need one, since it only depends on the presence of chunks in `my_hub`. If we had a producing node, we could define the method like this:
 
-- scheduler in detail (scheduling algorithm)
+```cpp
+std::size_t chunks_produced = 0;
+std::size_t total_input_chunks = 420;
+
+my_other_node.can_advance([&](){
+    return chunks_produced < total_input_chunks;
+});
+```
+
+
+## Scheduling
+
+In the code snippets above you learned how to define hubs and compute nodes. The last thing that remains is adding a scheduler and letting it run the pipeline to completion:
+
+```cpp
+noarr::pipelines::DebuggingScheduler scheduler;
+scheduler.add(my_hub);
+scheduler.add(my_node);
+scheduler.add(my_other_hub);
+scheduler.add(my_other_node);
+
+// run the pipeline to completion
+scheduler.run();
+```
+
+The scheduler calls `can_advance` on all nodes, trying to get them to advance. If all the nodes are *idle* and also respond negatively to `can_advance`, it means there are no nodes to be advanced and the pipeline terminates.
+
+Each node can perform some action during the pipeline initialization and termination by using the corresponding event methods:
+
+```cpp
+my_other_node.initialize([&](){
+    // e.g. open a file to read
+});
+
+my_other_node.terminate([&](){
+    // e.g. close the file
+});
+```
+
+
+## Introductory example
+
+This section talks about the absolute basics of noarr pipelines. You can read through the `upcase` example located [here](../examples/upcase) to see all these concepts put together.
+
+
+## Multithreading
+
+We said that the `advance` method starts an ansynchronous non-blocking operation that ends by calling the `callback`, but all the examples so far were synchronous. This was only to get the basic concepts across and to keep the code simple. A more realistic way to create *compute nodes* is to extend the `AsyncComputeNode` or the `CudaComputeNode`. Both of these nodes extend the `advance` method in ways that allow it to be non-blocking. The `AsyncComputeNode` provides an `advance_async` method whose content is executed by a background thread. The `CudaComputeNode` provides an `advance_cuda` method that also runs in a background thread and finishes when a corresponding cuda stream gets emptied.
+
+By introducing additional threads we need to start worrying about synchronization of access to shared variables. Noarr pipelines solves this in a way that does not require the use of locks.
+
+> **Note:** By a shared variable we mean any variable that is acessed by two different nodes. Hubs are not considered shared variables since they are designed to be accessed by multiple nodes simulatenously.
+
+The thread that calls `scheduler.run()` is called the *scheduler thread*. The methods `can_advance`, `advance`, `initialize` and `terminate` all run in this thread. This makes the code in these methods safe to access any shared variables, because executions of these methods will never overlap. On the other hand, methods like `advance_async` and `advance_cuda` are dangerous and should only access variables unique to the node.
+
+> **Note:** A variable accessed by different methods of one node is not a shared varibale, because different methods of the node cannot run concurrently (even `can_advance` is not called, when the node is *working*).
+
+By using methods like `advance_async` we gain performance by spreading the load over multiple threads. But we also prevent ourselves from accessing shared variables. To solve this issue we have a method called `post_advance`. This method is guaranteed to be called when the asynchronous operation finishes, just before the node becomes *idle* and it runs in the *scheduler thread*. We can modify any shared variables from this method:
+
+```cpp
+std::size_t chunks_produced = 0;
+
+my_other_node.post_advance([&](){
+    chunks_produced += 1;
+});
+```
 
 
 ## Overview of terms
@@ -110,3 +175,4 @@ TODO...
     - advance
     - callback
     - scheduler
+    - scheduler thread
