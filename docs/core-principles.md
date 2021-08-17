@@ -199,7 +199,7 @@ void noarr::pipelines::DebuggingScheduler::run() {
                 generation_advanced_data = true;
             }
         }
-    } while (generation_advanced_data)
+    } while (generation_advanced_data);
 
     // pipeline termination
     for (auto& node : pipeline_nodes)
