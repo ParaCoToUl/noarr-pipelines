@@ -478,11 +478,11 @@ private:
             --i;
 
             // put the envelope into empty envelopes
-            empty_envelopes[envelope.device_index].push_back(&envelope);
+            empty_envelopes[envelope.device_index()].push_back(&envelope);
 
             say(
                 "Recovered an empty envelope for device: "
-                + std::to_string(envelope.device_index)
+                + std::to_string(envelope.device_index())
             );
         }
     }

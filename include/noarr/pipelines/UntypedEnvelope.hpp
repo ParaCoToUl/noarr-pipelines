@@ -24,21 +24,16 @@ public:
      * are only an external API to the user plus a "structure" field.
      */
     Buffer allocated_buffer_instance;
-    
-    /**
-     * Pointer to the underlying buffer
-     */
-    void* untyped_buffer = nullptr;
 
     /**
      * Size of the data buffer in bytes
      */
-    std::size_t size;
+    std::size_t size() const { return allocated_buffer_instance.bytes; }
 
     /**
      * What device this envelope lives on
      */
-    Device::index_t device_index;
+    Device::index_t device_index() const { return allocated_buffer_instance.device_index; }
 
     /**
      * Type of the structure value
@@ -57,9 +52,6 @@ protected:
         const std::type_index buffer_item_type
     ) :
         allocated_buffer_instance(std::move(allocated_buffer)),
-        untyped_buffer(allocated_buffer_instance.data_pointer),
-        size(allocated_buffer_instance.bytes),
-        device_index(allocated_buffer_instance.device_index),
         structure_type(structure_type),
         buffer_item_type(buffer_item_type)
     { }

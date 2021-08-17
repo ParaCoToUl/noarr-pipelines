@@ -31,8 +31,23 @@ public:
             typeid(Structure),
             typeid(BufferItem)
         ),
-        buffer((BufferItem*) untyped_buffer)
+        buffer((BufferItem*) allocated_buffer.data_pointer)
     { }
+
+    /**
+     * Efficiently swaps contents with another envelope of the same type and size, located on the same device
+     */
+    void swap_contents_with(Envelope &other)
+    {
+        // check that both envelopes belong to the same device
+        assert(device_index() == other.device_index());
+        // check that physical sizes of both envelopes (their buffers) match
+        assert(size() == other.size());
+
+        std::swap(buffer, other.buffer);
+        std::swap(allocated_buffer_instance, other.allocated_buffer_instance);
+        std::swap(structure, other.structure);
+    }
 };
 
 } // pipelines namespace
