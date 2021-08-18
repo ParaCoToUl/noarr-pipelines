@@ -16,11 +16,11 @@ struct Device {
     index_t device_index = -1;
 
     // useful constants
-    static constexpr index_t HOST_INDEX = -1;
-    static constexpr index_t DEVICE_INDEX = 0;
-    static constexpr index_t DEVICE0_INDEX = 0;
-    static constexpr index_t DEVICE1_INDEX = 1;
-    static constexpr index_t DUMMY_GPU_INDEX = -2;
+    enum : index_t { HOST_INDEX = -1 };
+    enum : index_t { DEVICE_INDEX = 0 };
+    enum : index_t { DEVICE0_INDEX = 0 };
+    enum : index_t { DEVICE1_INDEX = 1 };
+    enum : index_t { DUMMY_GPU_INDEX = -2 };
 
     Device() {
         //
