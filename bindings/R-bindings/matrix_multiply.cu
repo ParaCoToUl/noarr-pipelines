@@ -2,6 +2,12 @@
 #include <fstream>
 #include <string>
 
+#ifdef _WIN32
+#  define EXPORT extern "C" __declspec(dllexport)
+#else
+#  define EXPORT extern "C"
+#endif
+
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
 #include <noarr/cuda-pipelines.hpp>
@@ -156,7 +162,7 @@ void matrix_print(const int height, const int width, const char *data, const cha
 
 } // namespace
 
-extern "C" __declspec(dllexport) 
+EXPORT
 int matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *widths) {
 
 	// make sure we have the cuda pipelines extension registered
