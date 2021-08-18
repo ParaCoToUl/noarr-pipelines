@@ -17,7 +17,7 @@ namespace pipelines {
  */
 class DummyGpuAllocator : public HostAllocator {
 public:
-    virtual Device::index_t device_index() const override {
+    Device::index_t device_index() const override {
         return Device::DUMMY_GPU_INDEX;
     };
 };

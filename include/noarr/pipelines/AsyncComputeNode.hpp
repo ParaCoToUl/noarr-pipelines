@@ -26,7 +26,7 @@ public:
 
 protected:
 
-    virtual void __internal__advance() override {
+    void __internal__advance() override {
         ComputeNode::__internal__advance(); // call the standard "advance"
 
         // callback was already called in the "advance" method,
@@ -53,7 +53,7 @@ protected:
             this->callback();
     }
 
-    virtual void advance() override {
+    void advance() override {
         // do not call callback here
         // (the default node implementation does, we moved it to advance_async)
     }

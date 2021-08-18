@@ -17,15 +17,15 @@ namespace pipelines {
  */
 class HostAllocator : public MemoryAllocator {
 public:
-    virtual Device::index_t device_index() const override {
+    Device::index_t device_index() const override {
         return Device::HOST_INDEX;
     };
 
-    virtual void* allocate(std::size_t bytes) const override {
+    void* allocate(std::size_t bytes) const override {
         return malloc(bytes);
     };
 
-    virtual void deallocate(void* buffer) const override {
+    void deallocate(void* buffer) const override {
         free(buffer);
     };
 };
