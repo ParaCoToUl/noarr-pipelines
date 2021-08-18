@@ -31,7 +31,7 @@ public:
             typeid(Structure),
             typeid(BufferItem)
         ),
-        buffer((BufferItem*) allocated_buffer.data_pointer)
+        buffer((BufferItem*) allocated_buffer_instance.data_pointer)
     { }
 
     /**
