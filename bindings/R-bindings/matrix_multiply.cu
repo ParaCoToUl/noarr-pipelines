@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-//#include <cuda_runtime.h>
 
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
