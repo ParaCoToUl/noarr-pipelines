@@ -67,7 +67,7 @@ void matrix_multiply_impl(const Matrix1 matrix1, const Matrix2 matrix2, MatrixRe
 template<typename Matrix1, typename Matrix2>
 void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2 &matrix2, char *data_results, const char *layout_results)
 {
-	using std::string_literals::operator""s;
+	using namespace std::string_literals;
 
 	std::size_t height1 = matrix1.template get_length<'m'>();
 	std::size_t width2 = matrix2.template get_length<'n'>();
@@ -91,7 +91,7 @@ void matrix_multiply_impl(
 	const int height2, const int width2, const char *data2, const char *layout2,
 	char *data_results, const char *layout_results)
 {
-	using std::string_literals::operator""s;
+	using namespace std::string_literals;
 
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height2), noarr::set_length<'n'>(width2));
 
@@ -111,7 +111,7 @@ void matrix_multiply(
 	const int height2, const int width2, const char *data2, const char *layout2,
 	char *data_results, const char *layout_results)
 {
-	using std::string_literals::operator""s;
+	using namespace std::string_literals;
 
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height1), noarr::set_length<'n'>(width1));
 
@@ -144,7 +144,7 @@ void matrix_print_impl(Matrix &matrix) {
 
 void matrix_print(const int height, const int width, const char *data, const char *layout)
 {
-	using std::string_literals::operator""s;
+	using namespace std::string_literals;
 
 
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height), noarr::set_length<'n'>(width));
