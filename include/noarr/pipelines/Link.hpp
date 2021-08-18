@@ -151,12 +151,12 @@ public:
      * The host provides an envelope to the link for the guest to access
      */
     void host_envelope(
-        Envelope<Structure, BufferItem>& envelope,
-        std::function<void()> callback
+        Envelope<Structure, BufferItem>& _envelope,
+        std::function<void()> _callback
     ) {
-        this->envelope = &envelope;
-        this->untyped_envelope = &envelope;
-        this->callback = callback;
+        this->envelope = &_envelope;
+        this->untyped_envelope = &_envelope;
+        this->callback = _callback;
         this->state = LinkState::fresh;
         this->was_committed = false;
     }

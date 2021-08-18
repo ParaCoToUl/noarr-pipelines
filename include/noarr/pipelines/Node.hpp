@@ -15,7 +15,7 @@ public:
      */
     std::string label;
 
-    Node() : label(std::to_string((unsigned long)this)) { }
+    Node() : label(std::to_string((std::uintptr_t)this)) { }
 
     Node(const std::string& label) : label(label) { }
 

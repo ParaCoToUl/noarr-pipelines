@@ -59,7 +59,7 @@ public:
 
 protected:
 
-    virtual bool __internal__can_advance() {
+    bool __internal__can_advance() override {
         // a compute node cannot start, unless it has envelopes on all links
         if (!are_links_ready())
             return false;
@@ -68,7 +68,7 @@ protected:
         return Node::__internal__can_advance();
     }
 
-    virtual bool can_advance() override {
+    bool can_advance() override {
         // NOTE: generic node has default to false,
         // but compute node has default to true, because it is conditioned by links
         return true;
@@ -79,7 +79,7 @@ protected:
      * implementation. Exists only so that the final user can override
      * can_advance and forget to call the base implementation and not get roasted.
      */
-    virtual void __internal__post_advance() override {
+    void __internal__post_advance() override {
         Node::__internal__post_advance(); // call "post_advance"
 
         finalize_links_after_advance();
