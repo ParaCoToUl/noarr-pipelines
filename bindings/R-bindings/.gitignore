@@ -1,2 +1,7 @@
-/.tmpbuild-*/
-/noarr.matrix_*.tar.gz
+*.so
+*.o
+*.out
+*.data
+
+create_matrix
+noarr-structures/
