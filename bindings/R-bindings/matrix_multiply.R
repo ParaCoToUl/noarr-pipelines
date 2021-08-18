@@ -6,7 +6,7 @@ matrix_multiply_demo <- function(file, size, repetitions) {
         if (Sys.info()["sysname"] == "Linux") {
             dyn.load("matrix_multiply.so")
         } else if (Sys.info()["sysname"] == "Windows") {
-            dyn.load("matrix_multiply.so")
+            dyn.load("matrix_multiply.dll")
         }
     }
 

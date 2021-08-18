@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+//#include <cuda_runtime.h>
 
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
@@ -156,7 +157,8 @@ void matrix_print(const int height, const int width, const char *data, const cha
 
 } // namespace
 
-extern "C" int matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *widths) {
+extern "C" __declspec(dllexport) 
+int matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *widths) {
 
 	// make sure we have the cuda pipelines extension registered
 	CudaPipelines::register_extension();
