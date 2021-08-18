@@ -2,8 +2,12 @@
 
 matrix_multiply_demo <- function(file, size, repetitions) {
     if(!is.loaded("run_demo")) {
-        message("Loading the shared library...");
-        dyn.load("matrix_multiply.so")
+        message("Loading the shared library...")
+        if (Sys.info()["sysname"] == "Linux") {
+            dyn.load("matrix_multiply.so")
+        } else if (Sys.info()["sysname"] == "Windows") {
+            dyn.load("matrix_multiply.so")
+        }
     }
 
     n_matrices <- repetitions
@@ -19,6 +23,6 @@ matrix_multiply_demo <- function(file, size, repetitions) {
         widths=as.integer(widths))
 }
 
-matrix_multiply_demo("matrix32.data", 32, 32)
-matrix_multiply_demo("matrix64.data", 64, 64)
-matrix_multiply_demo("matrix96.data", 96, 96)
+matrix_multiply_demo("data/matrix32.data", 32, 32)
+matrix_multiply_demo("data/matrix64.data", 64, 64)
+matrix_multiply_demo("data/matrix96.data", 96, 96)

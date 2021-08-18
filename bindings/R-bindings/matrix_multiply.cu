@@ -2,8 +2,6 @@
 #include <fstream>
 #include <string>
 
-#include <R.h>
-
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
 #include <noarr/cuda-pipelines.hpp>

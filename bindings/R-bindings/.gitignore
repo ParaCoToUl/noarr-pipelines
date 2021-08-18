@@ -1,7 +1,6 @@
 *.so
 *.o
 *.out
-*.data
 
 create_matrix
 noarr-structures/
