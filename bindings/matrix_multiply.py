@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 from ctypes import *
+import platform
 
-matrix_multiply = CDLL('./matrix_multiply.so')
+if platform.system() == "Linux":
+    matrix_multiply = CDLL('./matrix_multiply.so')
+elif platform.system() == "Windows":
+    matrix_multiply = CDLL('.\matrix_multiply.dll')
 
 def matrix_multiply_demo(file, size, repetitions):
     n_matrices = (c_int * 1)(repetitions)
