@@ -8,3 +8,7 @@
 
 create_matrix
 noarr-structures/
+
+# visual studio files
+/.vs/
+/.vscode/
