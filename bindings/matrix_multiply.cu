@@ -12,17 +12,12 @@
 #include <noarr/structures_extended.hpp>
 #include <noarr/cuda-pipelines.hpp>
 
-using MatrixStructureRows = noarr::vector<'m', noarr::vector<'n', noarr::scalar<int>>>;
-using MatrixStructureColumns = noarr::vector<'n', noarr::vector<'m', noarr::scalar<int>>>;
+using value_type = std::uint32_t;
+using MatrixStructureRows = noarr::vector<'m', noarr::vector<'n', noarr::scalar<value_type>>>;
+using MatrixStructureColumns = noarr::vector<'n', noarr::vector<'m', noarr::scalar<value_type>>>;
 
 using namespace noarr::pipelines;
-
-namespace {
-
-constexpr std::size_t BLOCK_SIZE = 32;
-
-}
-
+using namespace std::string_literals;
 
 template<typename Matrix1, typename Matrix2, typename MatrixResult>
 __global__ void matrix_multiply_kernel(const Matrix1 matrix1, const Matrix2 matrix2, MatrixResult result, std::size_t width)
@@ -39,6 +34,8 @@ __global__ void matrix_multiply_kernel(const Matrix1 matrix1, const Matrix2 matr
 }
 
 namespace {
+
+constexpr std::size_t BLOCK_SIZE = 32;
 
 /**
  * @brief Takes 2 noarr matrices and multiplyes them.
@@ -67,8 +64,6 @@ void matrix_multiply_impl(const Matrix1 matrix1, const Matrix2 matrix2, MatrixRe
 template<typename Matrix1, typename Matrix2>
 void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2 &matrix2, char *data_results, const char *layout_results)
 {
-	using namespace std::string_literals;
-
 	std::size_t height1 = matrix1.template get_length<'m'>();
 	std::size_t width2 = matrix2.template get_length<'n'>();
 
@@ -91,8 +86,6 @@ void matrix_multiply_impl(
 	const int height2, const int width2, const char *data2, const char *layout2,
 	char *data_results, const char *layout_results)
 {
-	using namespace std::string_literals;
-
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height2), noarr::set_length<'n'>(width2));
 
 	if (layout2 == "rows"s) {
@@ -111,8 +104,6 @@ void matrix_multiply(
 	const int height2, const int width2, const char *data2, const char *layout2,
 	char *data_results, const char *layout_results)
 {
-	using namespace std::string_literals;
-
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height1), noarr::set_length<'n'>(width1));
 
 	if (layout1 == "rows"s) {
@@ -144,9 +135,6 @@ void matrix_print_impl(Matrix &matrix) {
 
 void matrix_print(const int height, const int width, const char *data, const char *layout)
 {
-	using namespace std::string_literals;
-
-
 	auto set_dimensions = noarr::compose(noarr::set_length<'m'>(height), noarr::set_length<'n'>(width));
 
 	if (layout == "rows"s) {
@@ -163,13 +151,10 @@ void matrix_print(const int height, const int width, const char *data, const cha
 } // namespace
 
 EXPORT
-int matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *widths) {
+void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *widths) {
 
 	// make sure we have the cuda pipelines extension registered
 	CudaPipelines::register_extension();
-
-	using value_type = std::uint32_t;
-
 
 	/////////////////////////
 	// Define the pipeline //
@@ -335,6 +320,4 @@ int matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *wi
 	scheduler.add(accumulator_hub); // they just serve data management
 
 	scheduler.run();
-
-	return 0;
 }
