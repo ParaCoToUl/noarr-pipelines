@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 matrix_multiply_demo <- function(file, size, repetitions) {
-    if(!is.loaded("run_demo")) {
+    if(!is.loaded("matrix_multiply_demo")) {
         message("Loading the shared library...")
         if (Sys.info()["sysname"] == "Linux") {
             dyn.load("matrix_multiply.so")
