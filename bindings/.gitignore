@@ -1,6 +1,9 @@
 *.so
 *.o
 *.out
+*.dll
+*.ext
+*.lib
 
 create_matrix
 noarr-structures/
