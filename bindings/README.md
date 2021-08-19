@@ -16,9 +16,9 @@ The following two sections describe how to build the dynamic library on Linux an
 
 ### Linux environment
 
-Simply run [./build.sh](./build.sh) in this folder.
+Simply run [`./build.sh`](./build.sh) in this folder.
 
-Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [./build_dummy.sh](./build_dummy.sh).
+Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [`./build_dummy.sh`](./build_dummy.sh).
 
 ### Windows environment
 
@@ -34,9 +34,9 @@ For windows, there is an extra requirement of having installed [Visual Studio](h
 
     This script sets variables to build for 64bit system using *Community* version of *Visual Studion 2017*. Adjust it to fit your path to Visual Studio and the version you use.
 
-2. Run [.\build.cmd](./build.cmd) in this folder.
+2. Run [`.\build.cmd`](./build.cmd) in this folder.
 
-    Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [.\build_dummy.cmd](./build_dummy.cmd).
+    Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [`.\build_dummy.cmd`](./build_dummy.cmd).
 
 ## How to run the R demonstration
 
