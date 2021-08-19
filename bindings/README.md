@@ -12,13 +12,13 @@ The binding is performed by the following steps
 
 ## How to build the dynamic library (for both R and python)
 
-The following two sections describe how to build the dynamic library on Linux and Windows, this assumes you have installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (doesn't apply to dummy GPU versions).
+The following two sections describe how to build the dynamic library on Linux and Windows, this assumes you have installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (does not apply to dummy GPU versions).
 
 ### Linux environment
 
 Simply run [./build.sh](./build.sh) in this folder.
 
-Alternatively, for a version with a dummy GPU simulated on CPU (useful if you don't want to use GPU acceleration), run [./build_dummy.sh](./build_dummy.sh).
+Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [./build_dummy.sh](./build_dummy.sh).
 
 ### Windows environment
 
@@ -36,7 +36,7 @@ For windows, there is an extra requirement of having installed [Visual Studio](h
 
 2. Run [.\build.cmd](./build.cmd) in this folder.
 
-    Alternatively, for a version with a dummy GPU simulated on CPU (useful if you don't want to use GPU acceleration), run [.\build_dummy.cmd](./build_dummy.cmd).
+    Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do not want to use GPU acceleration), run [.\build_dummy.cmd](./build_dummy.cmd).
 
 ## How to run the R demonstration
 
