@@ -61,6 +61,6 @@ cmake --build .
 - `[x]` kmeans example with cuda
 - `[ ]` docs: cuda pipelines
 - `[ ]` docs: hardware manager
-- `[ ]` python bindings template
+- `[~]` python bindings template
 - `[~]` R bindings template
 - `[ ]` some todo notes in the code and the docs, search for "TODO"
