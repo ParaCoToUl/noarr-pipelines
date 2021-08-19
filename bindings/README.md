@@ -1,49 +1,93 @@
-# Bindings to the R language (demo)
+# Bindings to R and python (demo)
 
-This folder gives an example how to create C/C++ bindings to R with a code containing noarr-structures and demonstrates the usage of the created R (CRAN) package.
+This folder gives an example how to create bindings to R and python with a code containing noarr-structures and noarr-pipelines.
 
-This demonstration R package exports the function `matrix_multiply_demo(height, width, layout1, layout2, layout_result)` which takes 5 arguments:
+This allows us to accelerate algorithms written in R and python with C++ and CUDA (which then helps us to efficiently utilize both CPU and GPU processing power).
 
-1. height: the height of the left matrix (and the width of the right one)
-2. width: the width of the left matrix (and the height of the right one)
-3. layout1: the layout of the left matrix
-4. layout2: the layout of the right matrix
-5. layout_result: the layout of the result matrix
+The binding is performed by the following steps
 
-All layouts are either `"rows"` or `"columns"` and they indicate how the matrices shall be stored.
+- Creation of a shared dynamic library from C++ or CUDA code
+- Dynamic load of the library into R or python
+- Call to an exported function (in C++ marked by `extern "C"`, or `extern "C" __declspec(dllexport)` on Windows)
 
-`matrix_multiply_demo` then creates two data blobs of the size `width * height` for the left and the right matrix and fills those blobs with the numbers `1:(width * height)`. Then it creates a blob for the result matrix and runs the multiplication (all blobs are represented according to the layouts given).
+## How to build the dynamic library (for both R and python)
 
-## How to build
+The following two sections describe how to build the dynamic library on Linux and Windows, this assumes you have installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (doesn't apply to dummy GPU versions).
 
-On a linux environment, simply clone the repository containing this folder and run [./pack_cran.sh](./pack_cran.sh).
+### Linux environment
 
-## How to use
+Simply run [./build.sh](./build.sh) in this folder.
 
-In a R repl console run the following:
+Alternatively, for a version with a dummy GPU simulated on CPU (useful if you don't want to use GPU acceleration), run [./build_dummy.sh](./build_dummy.sh).
+
+### Windows environment
+
+For windows, there is an extra requirement of having installed [Visual Studio](https://visualstudio.microsoft.com/cs/).
+
+1. Open developer command prompt (included in Visual Studio) and make sure you have correctly set variables to build for your machine
+
+    You might want to do so by entering the following CMD command:
+
+    ```cmd
+    C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+    ```
+
+    This script sets variables to build for 64bit system using *Community* version of *Visual Studion 2017*. Adjust it to fit your path to Visual Studio and the version you use.
+
+2. Run [./build.cmd](./build.cmd) in this folder.
+
+    Alternatively, for a version with a dummy GPU simulated on CPU (useful if you don't want to use GPU acceleration), run [./build_dummy.cmd](./build_dummy.cmd).
+
+## How to run the R demonstration
+
+### Linux
+
+In a shell, run:
+
+```sh
+./matrix_multiply.R
+```
+
+or:
+
+```sh
+Rscript matrix_multiply.R
+```
+
+### Windows
+
+Run the file `matrix_multiply.R` in R.
+
+### Through R (regardless of environment)
 
 ```R
-# to install the package
-install.packages('noarr.matrix_0.1.tar.gz', type='source')
-
-# to use the package
-library('noarr.matrix')
+source("matrix_multiply.R")
 ```
 
-Make sure `noarr.matrix_0.1.tar.gz` points to the file created by the build script.
+## How to run the python demonstration
 
-The usage is demonstrated in full (from installation to running the `matrix_multiply_demo` function) in the file [example.R](example.R).
+### Linux
 
-On a linux environment, simply run:
+In a shell, run:
 
 ```sh
-./example.R
+./matrix_multiply.py
 ```
 
-or
+or:
 
 ```sh
-Rscript example.R
+python matrix_multiply.py
 ```
 
-This example demonstrates the usefulness of noarr-structures in implementing algorithms using data structures with their layout abstracted away (and thus allowing this implementations run on different data structures). For the implementation, see [src/noarr_matrix.cpp](src/noarr_matrix.cpp) (the main functionality is in the first overload of `matrix_multiply_impl`; there are multiple `matrix_multiply_impl` overloads to facilitate multiple switches from a runtime variable into a distinct type so we can set each matrix to a different layout)
+### Windows
+
+In powershell/cmd, run:
+
+```ps1
+python.exe matrix_multiply.py
+```
+
+## Expected output for demonstrations
+
+The expected output for all demonstrations is in the file [expected.txt](expected.txt).
