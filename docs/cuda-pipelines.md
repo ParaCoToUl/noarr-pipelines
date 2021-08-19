@@ -20,7 +20,7 @@ With the extension registered, you can now use `Device::DEVICE_INDEX` to represe
 The `CudaComputeNode` builds on top of the `AsyncComputeNode` and replaces the `advance_async` method with the `advance_cuda` method. This method receives a dedicated cuda stream as an argument:
 
 ```cpp
-auto my_node = LambdaCudaComputeNode();
+auto my_node = noarr::pipelines::LambdaCudaComputeNode();
 
 my_node.advance_cuda([&](cudaStream_t stream){
     // ...
