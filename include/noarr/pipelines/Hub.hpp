@@ -128,6 +128,8 @@ public:
      * Allocates a new envelope on the given device
      */
     void allocate_envelope(Device::index_t device_index) {
+        guard_scheduler_thread();
+
         envelopes.push_back(
             std::make_unique<Envelope_t>(
                 hardware_manager.allocate_buffer(device_index, buffer_size)
@@ -143,6 +145,8 @@ public:
      * Sets the maximum allowed queue length
      */
     void set_max_queue_length(std::size_t max_length) {
+        guard_scheduler_thread();
+        
         max_queue_length = max_length;
     }
 
@@ -150,6 +154,8 @@ public:
      * Returns the current length of the queue
      */
     std::size_t get_queue_length() const {
+        guard_scheduler_thread();
+
         return chunk_queue.size();
     }
 
@@ -160,6 +166,8 @@ public:
      * setting methods.
      */
     void reset_dataflow() {
+        guard_scheduler_thread();
+
         dataflow_links.clear();
     }
 
@@ -175,6 +183,8 @@ public:
      * Sets the dataflow to point to a given node or link
      */
     void flow_data_to(Link_t& link, bool reset_flow_first = true) {
+        guard_scheduler_thread();
+
         if (reset_flow_first)
             reset_dataflow();
 
@@ -245,6 +255,8 @@ public:
         // TLDR: Get all non-producing links and if there is only one such link,
         // use that. Otherwise there is none, or we cannot decide on which to use,
         // so do not infer anything.
+
+        guard_scheduler_thread();
 
         bool found_a_link = false;
 

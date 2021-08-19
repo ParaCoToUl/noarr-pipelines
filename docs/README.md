@@ -13,8 +13,8 @@ Here is the top-level structure of the entire documentation for Noarr. This is h
   - `Advanced stuff (how it works, how to extend, etc...)`
 - Noarr Pipelines
   - [Core principles](core-principles.md)
-  - [Compute Node](compute-node.md)
   - [Hub](hub.md)
+  - [Compute Node](compute-node.md)
   - Cuda Pipelines `(cuda compute node + memory allocation)`
   - Hardware Manager and custom extensions
 - Examples

@@ -88,10 +88,10 @@ my_node.advance([&](){
     // print to the screen
     std::cout << std::string(buffer_pointer, array_size) << std::endl;
 
-    // The advance method assumes you start an asynchronous operation that
-    // will signal its completion by calling back. We did not do that,
+    // The advance method assumes we started an asynchronous operation that
+    // signals its completion by calling back. We did not do that,
     // but we still need to call back.
-    writer.callback();
+    my_node.callback();
 });
 ```
 
