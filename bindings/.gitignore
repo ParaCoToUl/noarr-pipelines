@@ -1,8 +1,9 @@
 *.so
 *.o
+*.obj
 *.out
 *.dll
-*.ext
+*.exp
 *.lib
 
 create_matrix
