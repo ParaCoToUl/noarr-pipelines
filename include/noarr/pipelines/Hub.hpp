@@ -128,6 +128,8 @@ public:
      * Allocates a new envelope on the given device
      */
     void allocate_envelope(Device::index_t device_index) {
+        guard_scheduler_thread();
+
         envelopes.push_back(
             std::make_unique<Envelope_t>(
                 hardware_manager.allocate_buffer(device_index, buffer_size)
