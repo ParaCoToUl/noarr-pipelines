@@ -2,7 +2,6 @@
 
 matrix_multiply_demo <- function(file, size, repetitions) {
     if(!is.loaded("matrix_multiply_demo")) {
-        message("Loading the shared library...")
         if (Sys.info()["sysname"] == "Linux") {
             dyn.load("matrix_multiply.so")
         } else if (Sys.info()["sysname"] == "Windows") {
