@@ -31,6 +31,24 @@ target_link_libraries(<my-app> PRIVATE Threads::Threads)
 ```
 
 
+## Documentation
+
+The documentation can be found in the [docs folder](docs).
+
+
+## Examples
+
+The [examples folder](examples) contains two examples that demonstrate the usage of this library:
+
+- `uppercase`: A small, demonstrative example, showing the producer-consumer pattern. You should be able to understand this example after reading the [Core principles](docs/core-principles.md) section of the documentation.
+- `kmeans`: A large example, implementing the k-means algorithm, using almost the entire library, with the cuda extension and with noarr structures.
+
+
+## Bindings
+
+The [bindings folder](bindings) contains an example project that is experted as a binding to both the R language and the Python language. You can duplicate this folder and modify its contents to package your own GPGPU algorithm.
+
+
 ## Running tests
 
 Enter the tests folder (`tests/pipelines` or `tests/cuda-pipelines`). In the terminal (linux bash, windows cygwin or gitbash) run the following commands:

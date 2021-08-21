@@ -1,6 +1,6 @@
-# Upcase example
+# Uppercase example
 
-This folder contains a standalone cmake project that demonstrates absolute basics of noarr pipelines. It features a pipeline designed to read a file, line by line, capitalize each line and print it to the screen. It demonstrates the producer-consumer pattern that is easy to build using noarr pipelines.
+This folder contains a standalone cmake project that demonstrates the absolute basics of noarr pipelines. It features a pipeline, designed to read a file line by line, capitalize each line and print it to the screen. It demonstrates the producer-consumer pattern that is easy to build using noarr pipelines.
 
 
 ## Compilation
@@ -19,7 +19,7 @@ cmake ..
 cmake --build .
 
 # run the compiled example on the input file
-./upcase ../input.txt
+./uppercase ../input.txt
 ```
 
 

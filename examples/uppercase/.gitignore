@@ -20,12 +20,12 @@ build
 # CTest & testing
 /ParseAndAddCatchTests.cmake
 /DartConfiguration.tcl
-/upcase
+/uppercase
 
 # CMake stuff on Windows
 /Debug
 /x64
-/upcase.dir
+/uppercase.dir
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user

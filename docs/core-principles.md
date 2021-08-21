@@ -7,7 +7,7 @@ The noarr pipelines library aims to provide a framework for building computation
 
 The *pipeline* is composed of *nodes* - independent units that perform a piece of the computation. Imagine that we have a text file where we want to capitalize all the letters and save the result to another file. The entire file would not fit in memory, but we can say that one line of text easily would. We could process the file line by line, thereby streaming the whole process. The pipeline would have one *node* responsible for reading lines of text, another *node* for performing the capitalization and another one for writing capitalized lines to the output file. This kind of separation lets all nodes run concurrently and increases the overall throughput of the system. We could also imagine, that the capitalization process was expensive and we would like to run it on the GPU.
 
-> **Note:** The described task is implemented in the `upcase` example and can be found [here](../examples/upcase).
+> **Note:** The described task is implemented in the `uppercase` example and can be found [here](../examples/uppercase).
 
 We described a scenario where we have *compute nodes* on different devices (GPU, CPU) but we need a way to transfer data between them. For this purpose we will create a special type of node called a *hub*. A *hub* can be imagined as a queue of chunks of data (lines of text in our example). We can produce new chunks by writing into it and consume chunks by reading from it. We can then put one *hub* in between each of our *compute nodes* to serve as the queue in the classic producer-consumer pattern. This gives us the following pipeline:
 
@@ -141,7 +141,7 @@ my_other_node.terminate([&](){
 
 ## Introductory example
 
-This section talks about the absolute basics of noarr pipelines. You can read through the `upcase` example located [here](../examples/upcase) to see all these concepts put together.
+This section talks about the absolute basics of noarr pipelines. You can read through the `uppercase` example located [here](../examples/uppercase) to see all these concepts put together.
 
 
 ## Multithreading

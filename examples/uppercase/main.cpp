@@ -23,10 +23,10 @@ int main(int argc, char* argv[]) {
         filename = std::string(argv[1]);
     } else {
         std::cout << "Usage:" << std::endl;
-        std::cout << "    upcase [filename]" << std::endl;
+        std::cout << "    uppercase [filename]" << std::endl;
         std::cout << std::endl;
         std::cout << "Since you are probably in the build folder, you can try:" << std::endl;
-        std::cout << "    upcase ../input.txt" << std::endl;
+        std::cout << "    uppercase ../input.txt" << std::endl;
         return 1;
     }
 
