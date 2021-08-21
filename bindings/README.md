@@ -4,11 +4,13 @@ This folder gives an example how to create bindings to R and python with a code 
 
 This allows us to accelerate algorithms written in R and python with C++ and CUDA (which then helps us to efficiently utilize both CPU and GPU processing power).
 
-The binding is performed by the following steps
+The binding is performed by the following steps:
 
 - Creation of a shared dynamic library from C++ or CUDA code
 - Dynamic load of the library into R or python
 - Call to an exported function (in C++ marked by `extern "C"`, or `extern "C" __declspec(dllexport)` on Windows)
+
+Follow this [tutorial](tutorial.md) for the tips how to create these bindings to algorithms of your own.
 
 ## How to build the dynamic library (for both R and python)
 
@@ -24,15 +26,15 @@ Alternatively, for a version with a dummy GPU simulated on CPU (useful if you do
 
 For windows, there is an extra requirement of having installed [Visual Studio](https://visualstudio.microsoft.com/cs/).
 
-1. Open developer command prompt (included in Visual Studio) and make sure you have correctly set variables to build for your machine
+1. Open a developer command prompt (included in Visual Studio) and make sure you have correctly set variables to build for your machine
 
-    You might want to do so by entering the following CMD command:
+    You can set the variables by entering the following command to the developer command prompt:
 
     ```cmd
-    C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+    "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
     ```
 
-    This script sets variables to build for 64bit system using *Community* version of *Visual Studion 2017*. Adjust it to fit your path to Visual Studio and the version you use.
+    This script sets variables to build for 64bit system using *Community* version of *Visual Studion 2017*. The command runs the file `vcvarsall.bat` stored in your Visual Studio folder, adjust it to fit your path to Visual Studio and the version you use.
 
 2. Run [`.\build.cmd`](./build.cmd) in this folder.
 
