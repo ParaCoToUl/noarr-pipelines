@@ -85,3 +85,17 @@ my_node.advance_cuda([&](cudaStream_t stream){
 ```
 
 The cuda pipelines extension registers memory transferers between the host and each individual device, but it does not register transferers directly between two devices. This is a feature that could be added in the future.
+
+The extension also provides a `NOARR_CUCH` macro for checking cuda errors. The macro can be wrapped around any cuda function that return `cudaError_t` and it will throw an exception in the case of an error being present.
+
+```cpp
+// check for errors after calling a kernel
+my_kernel<<<...>>>(...);
+NOARR_CUCH(cudaGetLastError());
+
+// check for errors during allocations
+NOARR_CUCH(cudaMalloc(&buffer, size));
+
+// check for errors when synchronizing cuda streams
+NOARR_CUCH(cudaStreamSynchronize(stream));
+```
