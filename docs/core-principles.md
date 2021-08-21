@@ -41,7 +41,9 @@ The following code shows you how to create a hub with two envelopes on each devi
 // - Structure type:       std::size_t
 // - Buffer pointer type:  char
 // - Envelope size:        sizeof(char) * 1024
-auto my_hub = noarr::pipelines::Hub<std::size_t, char>(sizeof(char) * 1024);
+auto my_hub = noarr::pipelines::Hub<std::size_t, char>(
+    sizeof(char) * 1024
+);
 
 // Allocate 4 envelopes, 2 on each device
 // Host = CPU memory (RAM)
@@ -68,7 +70,8 @@ When we create a custom *node*, we typically want to perform a computation and i
 The following code shows a *compute node*, linked to the hub from the previous code snippet. The compute node consumes chunks from the hub and prints their content as text to the screen:
 
 ```cpp
-// create a compute node that has its methods defined using lambda expressions
+// create a compute node that has its methods defined
+// using lambda expressions
 auto my_node = noarr::pipelines::LambdaComputeNode("my_node");
 
 // link the compute node to my_hub
@@ -79,7 +82,8 @@ auto& my_link = my_node.link(my_hub.to_consume(Device::HOST_INDEX));
 my_node.advance([&](){
     
     // the hub provides access to an envelope via my_link.envelope,
-    // the envelope contains data of the latest chunk (since we want to consume)
+    // the envelope contains data of the latest chunk
+    // (since we want to consume)
 
     // the structure property holds the length of the char array
     std::size_t array_size = my_link.envelope->structure;
@@ -90,8 +94,8 @@ my_node.advance([&](){
     // print to the screen
     std::cout << std::string(buffer_pointer, array_size) << std::endl;
 
-    // The advance method assumes we started an asynchronous operation that
-    // signals its completion by calling back. We did not do that,
+    // The advance method assumes we started an asynchronous operation
+    // that signals its completion by calling back. We did not do that,
     // but we still need to call back.
     my_node.callback();
 });

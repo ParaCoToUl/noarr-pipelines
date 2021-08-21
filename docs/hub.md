@@ -80,8 +80,8 @@ auto my_hub = Hub<std::size_t, float>(
     sizeof(float) * 1024 // size of all envelopes in my_hub
 );
 
-my_hub.allocate_envelopes(Device::HOST_INDEX, 2); // 2 envelopes on the host
-my_hub.allocate_envelopes(Device::DEVICE_INDEX, 4); // 4 envelopes on the device
+my_hub.allocate_envelopes(Device::HOST_INDEX, 2); // 2 on the host
+my_hub.allocate_envelopes(Device::DEVICE_INDEX, 4); // 4 on the device
 ```
 
 The number of envelopes impacts the behaviour of the hub. If you have no envelopes for a given device and a consuming link requests data for that device, it may never be satisfied. The consuming node will not be able to advance and advancing the hub will not solve the situation either. Therefore no nodes can be advanced and the pipeline terminates as if it has successfully done all the work. Having only one envelope allows the pipeline to function, but it cannot overlay any two operations, so it either produces or transfers or consumes. Having two envelopes is probably optimal in most situations that use the hub as a queue. There are, however, other ways to use the hub that may require different numbers of envelopes for optimal performance.
@@ -108,15 +108,17 @@ We have described how *links* can produce and consume chunks. It might sometimes
 There are a few functions that should help you in such a scenario:
 
 ```cpp
-// Takes an envelope from the pool of unused envelopes for the host device,
-// inserts it into the chunk queue as a new chunk and returns a reference to it.
+// Takes an envelope from the pool of unused envelopes for the host
+// device, inserts it into the chunk queue as a new chunk and returns
+// a reference to it.
 auto& envelope = my_hub.push_new_chunk();
 envelope.buffer[0] = 0;
 
 // Returns the reference to the host device envelope of the top chunk.
-// Fails if the chunk queue is empty. Performs a synchronous memory transfer
-// of the chunk to the host device if there is no host envelope for the chunk.
-// The memory transfer may fail due to the lack of unused envelopes.
+// Fails if the chunk queue is empty. Performs a synchronous memory
+// transfer of the chunk to the host device if there is no host envelope
+// for the chunk. The memory transfer may fail due to the lack
+// of unused envelopes.
 auto& envelope = my_hub.peek_top_chunk();
 std::cout << envelope.buffer[0] << std::endl;
 
@@ -138,8 +140,12 @@ auto my_node = noarr::pipelines::LambdaAsyncComputeNode("my_node");
 auto acc_hub = noarr::pipelines::Hub<void*, int>(sizeof(int));
 acc_hub.allocate_envelopes(Device::HOST_INDEX, 2);
 
-auto& producing_link = my_node.link(acc_hub.to_produce(Device::HOST_INDEX));
-auto& consuming_link = my_node.link(acc_hub.to_consume(Device::HOST_INDEX));
+auto& producing_link = my_node.link(
+    acc_hub.to_produce(Device::HOST_INDEX)
+);
+auto& consuming_link = my_node.link(
+    acc_hub.to_consume(Device::HOST_INDEX)
+);
 
 my_node.initialize([&](){
     auto& env = acc_hub.push_new_chunk();
@@ -147,7 +153,8 @@ my_node.initialize([&](){
 });
 
 my_node.advance_async([&](){
-    consuming_link.envelope->buffer[0] = producing_link.envelope->buffer[0] + 1;
+    consuming_link.envelope->buffer[0]
+        = producing_link.envelope->buffer[0] + 1;
 });
 
 my_node.terminate([&](){
@@ -185,7 +192,9 @@ auto my_node = noarr::pipelines::LambdaAsyncComputeNode("my_node");
 auto acc_hub = noarr::pipelines::Hub<void*, int>(sizeof(int));
 acc_hub.allocate_envelopes(Device::HOST_INDEX, 2);
 
-auto& modifying_link = my_node.link(acc_hub.to_modify(Device::HOST_INDEX));
+auto& modifying_link = my_node.link(
+    acc_hub.to_modify(Device::HOST_INDEX)
+);
 
 my_node.initialize([&](){
     auto& env = acc_hub.push_new_chunk();
@@ -209,10 +218,10 @@ Here is the list of all the link types and their construction:
 ```cpp
 bool autocommit = true | false; // true if omitted from arguments
 
-auto& link = my_node.link(my_hub.to_produce(Device::HOST_INDEX, autocommit));
-auto& link = my_node.link(my_hub.to_consume(Device::HOST_INDEX, autocommit));
-auto& link = my_node.link(my_hub.to_modify(Device::HOST_INDEX, autocommit));
-auto& link = my_node.link(my_hub.to_peek(Device::HOST_INDEX));
+auto& link = node.link(hub.to_produce(Device::HOST_INDEX, autocommit));
+auto& link = node.link(hub.to_consume(Device::HOST_INDEX, autocommit));
+auto& link = node.link(hub.to_modify(Device::HOST_INDEX, autocommit));
+auto& link = node.link(hub.to_peek(Device::HOST_INDEX));
 ```
 
 
@@ -271,8 +280,12 @@ This swap is very efficient, as it does not actually copy the content, but inste
 This trick can be used to speed up the pipeline if you have a compute node that consumes chunks from one hub and moves them to another hub with minimal modifications:
 
 ```cpp
-auto& input_link = my_node.link(input_hub.to_consume(Device::HOST_INDEX));
-auto& output_link = my_node.link(output_hub.to_produce(Device::HOST_INDEX));
+auto& input_link = my_node.link(
+    input_hub.to_consume(Device::HOST_INDEX)
+);
+auto& output_link = my_node.link(
+    output_hub.to_produce(Device::HOST_INDEX)
+);
 
 my_node.advance_async([&](){
     // perform minimal in-place modifications
@@ -305,14 +318,20 @@ To solve this issue, the hub remembers a *dataflow strategy*. A *dataflow strate
 The example could be realized by the following code:
 
 ```cpp
-auto my_hub = noarr::pipelines::Hub<std::size_t, float>(sizeof(float) * 1024);
+auto my_hub = noarr::pipelines::Hub<std::size_t, float>(
+    sizeof(float) * 1024
+);
 my_hub.allocate_envelope(Device::HOST_INDEX);
 
 auto modifier_node = LambdaAsyncComputeNode("modifier_node");
 auto consumer_node = LambdaAsyncComputeNode("consumer_node");
 
-auto& modifier_link = modifier_node.link(my_hub.to_modify(Device::HOST_INDEX));
-auto& consumer_link = consumer_node.link(my_hub.to_consume(Device::HOST_INDEX));
+auto& modifier_link = modifier_node.link(
+    my_hub.to_modify(Device::HOST_INDEX)
+);
+auto& consumer_link = consumer_node.link(
+    my_hub.to_consume(Device::HOST_INDEX)
+);
 
 // the hub starts out with a chunk present in the queue
 // to be modified and then consumed
