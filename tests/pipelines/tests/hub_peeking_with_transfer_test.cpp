@@ -13,7 +13,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Hub peeking with transfer", "[pipelines][unit][memory_transfer][hub]") {
+TEST_CASE("Hub peeking with transfer", "[memory_transfer][hub]") {
     auto& manager = HardwareManager::default_manager();
     manager.register_dummy_gpu();
 

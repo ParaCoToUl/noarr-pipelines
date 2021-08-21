@@ -11,7 +11,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Async compute node", "[pipelines][unit][async_compute_node]") {
+TEST_CASE("Async compute node", "[async_compute_node]") {
     std::vector<std::int32_t> log = {};
     std::vector<std::int32_t> expected_log = {
         1, 2, 3, 4, 5, 2, 3, 4, 5, 2, 3, 4, 5, 2, 6
@@ -52,7 +52,7 @@ TEST_CASE("Async compute node", "[pipelines][unit][async_compute_node]") {
         });
     }
 
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(async_node);
     scheduler.run();
 

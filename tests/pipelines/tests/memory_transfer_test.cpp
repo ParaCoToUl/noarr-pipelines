@@ -12,7 +12,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Memory transfer", "[pipelines][unit][memory_transfer]") {
+TEST_CASE("Memory transfer", "[memory_transfer]") {
     auto& manager = HardwareManager::default_manager();
     manager.register_dummy_gpu();
     auto& transferer = manager.get_transferer(Device::HOST_INDEX, Device::DUMMY_GPU_INDEX);

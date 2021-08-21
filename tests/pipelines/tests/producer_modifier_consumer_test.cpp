@@ -13,7 +13,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Producer modifier consumer example", "[pipelines][integration][prod_mod_con]") {
+TEST_CASE("Producer modifier consumer example", "[prod_mod_con][hub]") {
     HardwareManager::default_manager().register_dummy_gpu();
     
     std::vector<std::int32_t> input = {1, 2, 3, 4, 5};
@@ -77,7 +77,7 @@ TEST_CASE("Producer modifier consumer example", "[pipelines][integration][prod_m
 
     item_hub.flow_data_to(modifier);
 
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(item_hub);
     scheduler.add(producer);
     scheduler.add(modifier);

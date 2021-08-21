@@ -25,7 +25,7 @@ void world_simulation_via_inheritance(
         world_hub
     );
 
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(world_hub);
     scheduler.add(simulator_node);
 
@@ -83,7 +83,7 @@ void world_simulation_via_builder(
         });
     }
 
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(world_hub);
     scheduler.add(simulator_node);
 

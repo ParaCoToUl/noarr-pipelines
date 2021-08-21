@@ -9,7 +9,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Buffer", "[pipelines][unit][buffer]") {
+TEST_CASE("Buffer", "[buffer]") {
     
     SECTION("can be created from existing pointer") {
         void* ptr = malloc(1024);

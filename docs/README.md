@@ -7,3 +7,4 @@
 - [Hardware manager](hardware-manager.md)
 - [Scheduler](scheduler.md)
 - [Structures in pipelines](structures-in-pipelines.md)
+- [Noarr pipelines tests](../tests/README.md)

@@ -50,17 +50,3 @@ cmake --build .
 # (this step differs by platform, this example is for linux)
 ./test-runner
 ```
-
-
-## TODO
-
-- `[x]` docs: core principles
-- `[~]` docs: compute node
-- `[~]` docs: hub
-- `[x]` cuda
-- `[x]` kmeans example with cuda
-- `[ ]` docs: cuda pipelines
-- `[ ]` docs: hardware manager
-- `[~]` python bindings template
-- `[~]` R bindings template
-- `[ ]` some todo notes in the code and the docs, search for "TODO"

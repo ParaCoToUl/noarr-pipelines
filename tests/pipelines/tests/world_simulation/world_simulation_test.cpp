@@ -6,7 +6,7 @@
 
 #include "world_simulation.hpp"
 
-TEST_CASE("World simulation example", "[pipelines][integration][world_simulation]") {
+TEST_CASE("World simulation example", "[integration][world_simulation]") {
     const std::size_t TARGET_ITERATIONS = 10;
     std::vector<std::int32_t> world_data = {1, 2, 3, 4, 5, 6};
     std::vector<std::int32_t> expected_world_data = {1024, 2048, 3072, 4096, 5120, 6144};

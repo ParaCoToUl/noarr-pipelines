@@ -13,7 +13,7 @@
 
 using namespace noarr::pipelines;
 
-TEST_CASE("Producer filter consumer example", "[pipelines][integration][prod_fil_con]") {
+TEST_CASE("Producer filter consumer example", "[prod_fil_con][hub]") {
     HardwareManager::default_manager().register_dummy_gpu();
 
     // [producer] --> [hub A] --> [filter] --> [hub B] --> [consumer]
@@ -80,7 +80,7 @@ TEST_CASE("Producer filter consumer example", "[pipelines][integration][prod_fil
         });
     }
 
-    auto scheduler = DebuggingScheduler();
+    DebuggingScheduler scheduler;
     scheduler.add(hub_A);
     scheduler.add(hub_B);
     scheduler.add(producer);
