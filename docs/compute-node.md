@@ -154,24 +154,26 @@ my_async_node.post_advance([&](){
 
 This diagram shows the full inheritance hierarchy for nodes provided by noarr pipelines and the cuda extension:
 
-                  +------+
-                  | Node |
-                  +------+
-                    |  |
-              ------    ------- 
-             |                 |
-      +-------------+       +-----+
-      | ComputeNode |       | Hub |
-      +-------------+       +-----+
-             |
-    +------------------+
-    | AsyncComputeNode |
-    +------------------+
-             |
-    +-----------------+
-    | CudaComputeNode |
-    +-----------------+
-    
+```txt
+              +------+
+              | Node |
+              +------+
+                |  |
+          ------    ------- 
+         |                 |
+  +-------------+       +-----+
+  | ComputeNode |       | Hub |
+  +-------------+       +-----+
+         |
++------------------+
+| AsyncComputeNode |
++------------------+
+         |
++-----------------+
+| CudaComputeNode |
++-----------------+
+```
+
 The diagram excludes the `Lambda-` prefixed variants since they simply inherit from their non-prefixed variants. There are these lambda variants:
 
 - `LambdaComputeNode`

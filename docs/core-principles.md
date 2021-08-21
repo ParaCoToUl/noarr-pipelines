@@ -11,9 +11,11 @@ The *pipeline* is composed of *nodes* - independent units that perform a piece o
 
 We described a scenario where we have *compute nodes* on different devices (GPU, CPU) but we need a way to transfer data between them. For this purpose we will create a special type of node called a *hub*. A *hub* can be imagined as a queue of chunks of data (lines of text in our example). We can produce new chunks by writing into it and consume chunks by reading from it. We can then put one *hub* in between each of our *compute nodes* to serve as the queue in the classic producer-consumer pattern. This gives us the following pipeline:
 
-    [reader] --> {reader_hub} --> [capitalizer] --> {writer_hub} --> [writer]
-       |                                                                |
-    input.txt                                                      output.txt
+```txt
+[reader] --> {reader_hub} --> [capitalizer] --> {writer_hub} --> [writer]
+   |                                                                |
+input.txt                                                      output.txt
+```
 
 A *compute node* is joined to a *hub* by something called a *link*. A *link* mediates the exchange of data between both sides and it also holds various metadata, like its type (producing / consuming) or the device index on which the *compute node* expects the data to be received. Remember that we imagined the capitalizer to be a GPU kernel. It wants to receive data located in the GPU memory. The *hub* handles the memory transfer for us.
 

@@ -11,12 +11,14 @@
 
 To get the inner workings of a hub fully across, we demonstrate the following diagram. It shows a hub with one producing link on the CPU and one consuming link on the GPU. The hub starts with two empty envelopes on each device:
 
-    Pool of unused envelopes:
-    [Env_A, CPU: <empty>], [Env_B, CPU: <empty>], [Env_C, GPU: <empty>],
-    [Env_D, GPU: <empty>]
+```txt
+Pool of unused envelopes:
+[Env_A, CPU: <empty>], [Env_B, CPU: <empty>], [Env_C, GPU: <empty>],
+[Env_D, GPU: <empty>]
 
-    Chunk queue:
-    <empty>
+Chunk queue:
+<empty>
+```
 
 > **Note:** An empty envelope is not acutally empty by having zero size. It is empty in the same sense an unitialized variable is empty - it contains some data but the data is considered to have no meaning.
 
@@ -24,37 +26,45 @@ To get the inner workings of a hub fully across, we demonstrate the following di
 
 When the producing link wants to produce a new chunk, it is given an unused envelope for the CPU (the envelope `Env_A`). When the production is commited, the envelope is inserted into the queue of chunks:
 
-    Pool of unused envelopes:
-    [Env_B, CPU: <empty>], [Env_C, GPU: <empty>], [Env_D, GPU: <empty>]
+```txt
+Pool of unused envelopes:
+[Env_B, CPU: <empty>], [Env_C, GPU: <empty>], [Env_D, GPU: <empty>]
 
-    Chunk queue:
-    Chunk( [Env_A, CPU: Chunk_1] )
+Chunk queue:
+Chunk( [Env_A, CPU: Chunk_1] )
+```
 
 Since the consumer wants to receive the data for the GPU, the hub transfers the chunk to the GPU device:
 
-    Pool of unused envelopes:
-    [Env_B, CPU: <empty>], [Env_D, GPU: <empty>]
+```txt
+Pool of unused envelopes:
+[Env_B, CPU: <empty>], [Env_D, GPU: <empty>]
 
-    Chunk queue:
-    Chunk( [Env_A, CPU: Chunk_1] )
-         ( [Env_C, GPU: Chunk_1] )
+Chunk queue:
+Chunk( [Env_A, CPU: Chunk_1] )
+     ( [Env_C, GPU: Chunk_1] )
+```
 
 While the transfer was happening, the producer was able to produce another chunk of data, because there was an empty envelope available (`Env_B`):
 
-    Pool of unused envelopes:
-    [Env_D, GPU: <empty>]
+```txt
+Pool of unused envelopes:
+[Env_D, GPU: <empty>]
 
-    Chunk queue:
-    Chunk( [Env_B, CPU: Chunk_2] )  Chunk( [Env_A, CPU: Chunk_1] )
-         (                       ),      ( [Env_C, GPU: Chunk_1] )
+Chunk queue:
+Chunk( [Env_B, CPU: Chunk_2] )  Chunk( [Env_A, CPU: Chunk_1] )
+     (                       ),      ( [Env_C, GPU: Chunk_1] )
+```
 
 Now the consumer has its data ready and so it receives the envelope `Env_C`. When the consumtion finishes, the entire last chunk is deleted and its envelopes return back to the pool:
 
-    Pool of unused envelopes:
-    [Env_D, GPU: <empty>], [Env_A, CPU: <empty>], [Env_C, GPU: <empty>]
+```txt
+Pool of unused envelopes:
+[Env_D, GPU: <empty>], [Env_A, CPU: <empty>], [Env_C, GPU: <empty>]
 
-    Chunk queue:
-    Chunk( [Env_B, CPU: Chunk_2] )
+Chunk queue:
+Chunk( [Env_B, CPU: Chunk_2] )
+```
 
 > **Note:** The chunk that will be consumed is called the *top chunk*. It is the oldest chunk in queue. It is the one on the dequeuing end of the queue.
 
@@ -282,9 +292,11 @@ We talked about various link types and how they behave, but when we demonstrated
 
 Say we have a hub with one chunk manually inserted during initialization. One compute node modifies the chunk and the other compute node consumes the chunk when all the modifications are done. The pipeline looks like this:
 
-            ,----- to_modify  ----> [modifier_node]
-    {my_hub}
-            '----- to_consume ----> [consumer_node]
+```txt
+        ,----- to_modify  ----> [modifier_node]
+{my_hub}
+        '----- to_consume ----> [consumer_node]
+```
 
 From the perspective of the hub, we do not know which link should we make ready. We could provide the chunk to both links but that would not end up behaving the way we want. The problem is even worse if both links require their data on different devices. We do not know to which device should we transfer the chunk.
 
