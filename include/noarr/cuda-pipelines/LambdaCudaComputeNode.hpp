@@ -20,6 +20,7 @@ class LambdaCudaComputeNode : public CudaComputeNode {
 private:
     std::function<void()> __impl__initialize;
     std::function<bool()> __impl__can_advance;
+    std::function<void()> __impl__advance;
     std::function<void()> __impl__advance_cuda;
     std::function<void()> __impl__post_advance;
     std::function<void()> __impl__terminate;
@@ -29,7 +30,8 @@ public:
         CudaComputeNode(device_index, label),
         __impl__initialize([](){}),
         __impl__can_advance([](){ return true; }),
-        __impl__advance_cuda([&](){}),
+        __impl__advance([](){}),
+        __impl__advance_cuda([](){}),
         __impl__post_advance([](){}),
         __impl__terminate([](){})
     { }
@@ -41,6 +43,7 @@ public:
 public: // setting implementation
     void initialize(std::function<void()> impl) { __impl__initialize = impl; }
     void can_advance(std::function<bool()> impl) { __impl__can_advance = impl; }
+    void advance(std::function<void()> impl) { __impl__advance = impl; }
     void advance_cuda(std::function<void()> impl) { __impl__advance_cuda = impl; }
     void advance_cuda(std::function<void(cudaStream_t)> impl) {
         __impl__advance_cuda = [this, impl](){
@@ -53,6 +56,7 @@ public: // setting implementation
 protected: // using implementation
     void initialize() override { __impl__initialize(); }
     bool can_advance() override { return __impl__can_advance(); }
+    void advance() override { return __impl__advance(); }
     void advance_cuda() override { return __impl__advance_cuda(); }
     void post_advance() override { return __impl__post_advance(); }
     void terminate() override { return __impl__terminate(); }
