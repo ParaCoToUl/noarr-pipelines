@@ -6,3 +6,4 @@
 - [Cuda pipelines](cuda-pipelines.md)
 - [Hardware manager](hardware-manager.md)
 - [Scheduler](scheduler.md)
+- [Structures in pipelines](structures-in-pipelines.md)
