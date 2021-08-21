@@ -1,6 +1,6 @@
 # Bindings tutorial
 
-This tutorial explains how to create bindings for C++/CUDA code to R or python. Thankfully, the steps to create a dynamic library to be loaded in R/python don't differ between the two languages.
+This tutorial explains how to create bindings for C++/CUDA code to R or python. Thankfully, the steps to create a dynamic library to be loaded in R/python do not differ between the two languages.
 
 ## Creating the dynamic library
 
@@ -29,7 +29,7 @@ This tutorial explains how to create bindings for C++/CUDA code to R or python. 
 
     - `O3` sets the optimization to the highest level (prioritizing performance)
     - **IMPORTANT:** `arch` sets the target GPU architecture for which we build
-    - `--expt-relaxed-constexpr` allows us to use `constexpr` functions in both the HOST code and in the DEVICE code (which isn't otherwise possible). It is possible for most `constexpr` functions because they can be precomputed in compile time.
+    - `--expt-relaxed-constexpr` allows us to use `constexpr` functions in both the HOST code and in the DEVICE code (which is not otherwise possible). It is possible for most `constexpr` functions because they can be precomputed in compile time.
     - `-I "noarr-structures/include/"` and `-I "../include/"`, each add an extra include directory containing source headers
     - **IMPORTANT:** `--shared` specifies we want to create a dynamic library
     - `-o <LIBRARY_NAME>` specifies the name of the outputted file (in this case library)
@@ -104,6 +104,6 @@ for i in range(repetitions):
 matrix_multiply.matrix_multiply_demo(n_matrices, matrices, heights, widths)
 ```
 
-Note that we use arrays just because R doesn't support non-array types and we use the same C code for both languages, python can actually pass scalar values (and even structures/unions).
+Note that we use arrays just because R does not support non-array types and we use the same C code for both languages, python can actually pass scalar values (and even structures/unions).
 
 For more information, see the [ctypes](https://docs.python.org/3/library/ctypes.html) documentation.
