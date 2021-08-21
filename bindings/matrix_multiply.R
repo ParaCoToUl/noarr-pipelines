@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 
 matrix_multiply_demo <- function(file, size, repetitions) {
+    # we test what platform the code runs on and then
+    # we load the dynamic library with the corresponding file extension
     if(!is.loaded("matrix_multiply_demo")) {
         if (Sys.info()["sysname"] == "Linux") {
             dyn.load("matrix_multiply.so")
@@ -11,10 +13,12 @@ matrix_multiply_demo <- function(file, size, repetitions) {
 
     n_matrices <- repetitions
 
-    matrices <- rep(file, n_matrices)
-    heights <- rep(size, n_matrices)
-    widths <- rep(size, n_matrices)
+    # here we create 3 vectors of the length `repetitions`
+    matrices <- rep(file, repetitions)
+    heights <- rep(size, repetitions)
+    widths <- rep(size, repetitions)
 
+    # we pass the 4 arguments to the C code, function `matrix_multiply_demo`
     res <- .C("matrix_multiply_demo",
         n_matrices=as.integer(n_matrices),
         matrices=as.character(matrices),
