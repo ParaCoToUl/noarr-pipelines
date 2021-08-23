@@ -12,10 +12,10 @@ elif platform.system() == "Windows":
 
 def matrix_multiply_demo(file, size, repetitions):
     # this syntax creates 4 arrays (3 integer arrays and 1 c-string array)
-    n_matrices = (c_int * 1)(repetitions)
-    matrices = (c_char_p * repetitions)()
-    heights = (c_int * repetitions)()
-    widths = (c_int * repetitions)()
+    n_matrices = (c_int * 1)(repetitions) # integer array of length `1`, initialized to `repetitions`
+    matrices = (c_char_p * repetitions)() # c-string array of length `repetitions`
+    heights = (c_int * repetitions)() # integer array of length `repetitions`
+    widths = (c_int * repetitions)() # integer array of length `repetitions`
 
     # here we initialize the arrays
     for i in range(repetitions):
