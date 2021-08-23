@@ -1,16 +1,16 @@
-# Bindings to R and python (demo)
+# Bindings to R and Python
 
-This folder gives an example how to create bindings to R and python with a code containing noarr-structures and noarr-pipelines.
+This folder gives an example how to create bindings to R and Python with a code containing noarr-structures and noarr-pipelines.
 
-This allows us to accelerate algorithms written in R and python with C++ and CUDA (which then helps us to efficiently utilize both CPU and GPU processing power).
+This allows us to accelerate algorithms written in R and Python with C++ and CUDA (which then helps us to efficiently utilize both CPU and GPU processing power).
 
 The binding is performed by the following steps:
 
 - Creation of a shared dynamic library from C++ or CUDA code
-- Dynamic load of the library into R or python
+- Dynamic load of the library into R or Python
 - Call to an exported function (in C++ marked by `extern "C"`, or `extern "C" __declspec(dllexport)` on Windows)
 
-The steps will be explained in detail in the following two sections (all examples are taken from [matrix_multiply.cu](matrix_multiply.cu) for C++/CUDA, from [matrix_multiply.R](matrix_multiply.R) for R , and from [matrix_multiply.py](matrix_multiply.py) for python):
+The steps will be explained in detail in the following two sections (all examples are taken from [matrix_multiply.cu](matrix_multiply.cu) for C++/CUDA, from [matrix_multiply.R](matrix_multiply.R) for R , and from [matrix_multiply.py](matrix_multiply.py) for Python):
 
 ## Creating the dynamic library
 
@@ -26,10 +26,10 @@ The steps will be explained in detail in the following two sections (all example
     #endif
     ```
 
-    When you create the wrapper function, make sure its arguments are supported by the language you are interested in accelerating. The R language is more limiting in this regard than python (which supports almost arbitrary types)
+    When you create the wrapper function, make sure its arguments are supported by the language you are interested in accelerating. The R language is more limiting in this regard than Python (which supports almost arbitrary types)
 
     - for more info on R's supported types, type `?.C` into an R console
-    - for more info on python's supported types, read the [ctypes](https://docs.python.org/3/library/ctypes.html) documentation.
+    - for more info on Python's supported types, read the [ctypes](https://docs.Python.org/3/library/ctypes.html) documentation.
 
 2. compile the code into a shared dynamic library (this will be different depending on the compiler you use and the platform). We will describe how it is done for nvcc as our main focus is GPU acceleration using CUDA:
 
@@ -85,27 +85,27 @@ R integer, character, numeric, etc. vectors are copied into C arrays and then co
 
 For more information, type `?.C` to an R console.
 
-### python
+### Python
 
-For python we will use the standard *[ctypes](https://docs.python.org/3/library/ctypes.html)* library. So make sure it is imported in your python code:
+For Python we will use the standard *[ctypes](https://docs.Python.org/3/library/ctypes.html)* library. So make sure it is imported in your Python code:
 
-```python
+```Python
 from ctypes import *
 ```
 
-In python, we load the library and store it to a variable by:
+In Python, we load the library and store it to a variable by:
 
-```python
+```Python
 variable = CDLL('<LIBRARY_NAME>')
 ```
 
 `<LIBRARY_NAME>` is the same as in the build command (there will be different file extensions on different platforms).
 
-We can distinguish the platform the python code runs on by calling `system()` from the standard `platform` library, which returns the name of the platform (e.g. `"Linux"` or `"Windows"`)
+We can distinguish the platform the Python code runs on by calling `system()` from the standard `platform` library, which returns the name of the platform (e.g. `"Linux"` or `"Windows"`)
 
-After the library has been loaded we make calls to the C functions as if they were python functions defined in the variable we have loaded the library into, but first, we have to convert the arguments into the `ctypes` library's special types, we will show this on the demonstrational example:
+After the library has been loaded we make calls to the C functions as if they were Python functions defined in the variable we have loaded the library into, but first, we have to convert the arguments into the `ctypes` library's special types, we will show this on the demonstrational example:
 
-```python
+```Python
 # this syntax creates 4 arrays (3 integer arrays and 1 c-string array)
 n_matrices = (c_int * 1)(repetitions) # integer array of length `1`, initialized to `repetitions`
 matrices = (c_char_p * repetitions)() # c-string array of length `repetitions`
@@ -130,11 +130,11 @@ matrix_multiply.matrix_multiply_demo(n_matrices, matrices, heights, widths)
 >                           int *heights, int *widths)
 > ```
 
-Note that we use arrays just because R does not support non-array types and we use the same C code for both languages, python can actually pass scalar values (and even structures/unions).
+Note that we use arrays just because R does not support non-array types and we use the same C code for both languages, Python can actually pass scalar values (and even structures/unions).
 
-For more information, see the [ctypes](https://docs.python.org/3/library/ctypes.html) documentation.
+For more information, see the [ctypes](https://docs.Python.org/3/library/ctypes.html) documentation.
 
-## How to build the demonstrational dynamic library (for both R and python)
+## How to build the demonstrational dynamic library (for both R and Python)
 
 The following two sections describe how to build the dynamic library on Linux and Windows, this assumes you have installed [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (does not apply to dummy GPU versions).
 
@@ -192,7 +192,7 @@ Open an R console in this folder and enter the following command:
 source("matrix_multiply.R")
 ```
 
-### How to run the python demonstration
+### How to run the Python demonstration
 
 #### **On Linux**
 
@@ -205,7 +205,7 @@ In a shell, run:
 or:
 
 ```sh
-python matrix_multiply.py
+Python matrix_multiply.py
 ```
 
 #### **On Windows**
@@ -213,7 +213,7 @@ python matrix_multiply.py
 In powershell/cmd, run:
 
 ```ps1
-python.exe matrix_multiply.py
+Python.exe matrix_multiply.py
 ```
 
 ### Expected output
