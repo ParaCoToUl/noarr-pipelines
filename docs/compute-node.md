@@ -34,7 +34,7 @@ void use_the_node_in_a_pipeline() {
     auto my_node = MyCustomComputeNode();
 
     // add it to the scheduler and run the pipeline
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(my_node);
     scheduler.run();
 }
@@ -61,7 +61,7 @@ my_node.advance([&](){
 });
 
 // add it to the scheduler and run the pipeline
-DebuggingScheduler scheduler;
+SimpleScheduler scheduler;
 scheduler.add(my_node);
 scheduler.run();
 ```

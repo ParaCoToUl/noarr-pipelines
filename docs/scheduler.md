@@ -6,7 +6,7 @@ To recap, this is the code to run a pipeline:
 
 ```cpp
 // create a scheduler
-noarr::pipelines::DebuggingScheduler scheduler;
+noarr::pipelines::SimpleScheduler scheduler;
 
 // register all pipeline nodes
 scheduler.add(my_hub);
@@ -29,13 +29,13 @@ The external API of a scheduler is very simple:
 
 When writing your own scheduler, you can use the constructor to pass in any parameters you need. This is nothing unusal, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log to.
 
-The `add` method accepts a `Node&` reference and remembers it internally to use it during scheduling. The order in which a user registers nodes has only impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers will parallelize the execution and the order will become non-deterministic.
+The `add` method accepts a `Node&` reference and remembers it internally to use it during scheduling. The order in which a user registers nodes has only impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers parallelize the execution and the order becomes non-deterministic.
 
 The `run` method blocks, and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If you incorrectly setup your `can_advance` conditions (or you do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly setup pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so cannot detect this situation.
 
 It is advisable that you run your pipeline only once. If you want to run it multiple times, it is better to destroy the pipeline and create a new one. The reason being that a terminated pipeline might be in a different state than the initial state before the exection. Therefore running it a second time might cause unexpected issues. That being said, there is nothing preventing you from calling `run` multiple times. If you make sure your hubs are in the right state after termination and your own added logic is also consistent, you can easily reuse the pipeline. You would save time on envelope allocation.
 
-The `add` and `run` methods are not part of any interface. Should the framework be extended by adding new schedulers, it is advisable to extract a `Scheduler` interface and make all other schedulers inherit from it. We did not do that yet, because the `DebuggingScheduler` is so far the only scheduler available.
+The `add` and `run` methods are part of the base class `Scheduler` that handles the node registration.
 
 
 ## Internal API
@@ -67,15 +67,13 @@ The stopping condition could be detected by having an array of boolean flags, on
 
 ## Debugging scheduler
 
-The `DebuggingScheduler` is the only scheduler currently available in noarr pipelines. The reason is that we did not want to spend time writing an optimal scheduler, while the whole concept of a pipeline composed of nodes was still not validated and it might turn our optimized scheduler code obsolete. So we only developed the debugging scheduler which will remain useful (for debugging) even if a parallel scheduler is added later.
-
-The debugging scheduler is designed to run all nodes synchronously, to make the scheduling algorithm fully deterministic. Since it runs nodes synchronously, we may define the concept of a generation. One generation is one iteration over all registered nodes. This lets us simplify the detection of the stopping condition - just keep track of data advancements within a generation, and if all the nodes do not advance data, we know we can stop the pipeline. The algorithm for the debugging scheduler could be describe by this code:
+The `DebuggingScheduler` is designed to run all nodes synchronously, to make the scheduling algorithm fully deterministic. Since it runs nodes synchronously, we may define the concept of a generation. One generation is one iteration over all registered nodes. This lets us simplify the detection of the stopping condition - just keep track of data advancements within a generation, and if all the nodes do not advance data, we know we can stop the pipeline. The algorithm for the debugging scheduler could be describe by this code:
 
 ```cpp
 void noarr::pipelines::DebuggingScheduler::run() {
     
     // pipeline initialization
-    for (auto& node : pipeline_nodes)
+    for (auto& node : nodes)
         node.scheduler_initialize();
 
     // the main loop, one iteration of which is called a generation
@@ -84,7 +82,7 @@ void noarr::pipelines::DebuggingScheduler::run() {
         generation_advanced_data = false;
 
         // update each node
-        for (auto& node : pipeline_nodes) {
+        for (auto& node : nodes) {
             node.scheduler_update(this->callback_handler);
             bool advanced_data = this->wait_for_callback();
             node.scheduler_post_update(advanced_data);
@@ -96,7 +94,7 @@ void noarr::pipelines::DebuggingScheduler::run() {
     } while (generation_advanced_data);
 
     // pipeline termination
-    for (auto& node : pipeline_nodes)
+    for (auto& node : nodes)
         node.scheduler_terminate();
 }
 ```
@@ -161,3 +159,98 @@ auto my_node = LambdaComputeNode("my_node");
 ```
 
 Internally, the `DebuggingScheduler` uses an instance of the `SchedulerLogger` class to encapsulate the logging logic.
+
+Just a classical program debugger can be stepped, the `DebuggingScheduler` can also be stepped. One step is considered to be the one attempt at advancing a node. This is how you would let the scheduler do fity steps and then leave the pipeline as is:
+
+```cpp
+DebuggingScheduler scheduler;
+scheduler.add(my_hub);
+scheduler.add(my_node);
+
+for (std::size_t i = 0; i < 50; ++i) {
+    scheduler.update_next_node();
+}
+```
+
+The pipeline initialization is performed automatically, but can also be performed manually. The following code initializes the pipeline manually, but behaves in the exact same way as the previous example (previously, the initialization was performed just before the first scheduler step):
+
+```cpp
+DebuggingScheduler scheduler;
+scheduler.add(my_hub);
+scheduler.add(my_node);
+
+scheduler.initialize_pipeline();
+
+for (std::size_t i = 0; i < 50; ++i) {
+    scheduler.update_next_node();
+}
+```
+
+Similarly, the pipeline termination will be automatically detected and performed after the last step, that detects the stopping condition. Calling `update_next_node` after that will cause an error.
+
+You can use this feature to run the pipeline to a point, where a certain global variable changes to a required value:
+
+```cpp
+bool my_flag = false; // some global variable
+
+// ... rest of the pipeline ...
+
+DebuggingScheduler scheduler;
+scheduler.add(my_hub);
+scheduler.add(my_node);
+
+// step the scheduler until the global variable changes value
+while (!my_flag) {
+    scheduler.update_next_node();
+}
+
+// put a regular breakpoint here and inspect the state of the pipeline
+std::cout << "Interesting point reached!" << std::endl;
+
+// finish the pipeline execution
+scheduler.run();
+```
+
+
+## Simple scheduler
+
+The `SimpleScheduler` is currently the default scheduler one would use in a pipeline. It also advances nodes in generations, like the `DebuggingScheduler`, but each generation runs all the nodes in parallel. At the end of each generation is a synchronization barrier and stopping condition detection. This algorithm is not optimal, but is good-enough in most cases. A proper, fully parallel scheduler could be implemented in the future.
+
+The algorithm for this scheduler is described by this code:
+
+```cpp
+void noarr::pipelines::SimpleScheduler::run() {
+    
+    // pipeline initialization
+    for (auto& node : nodes)
+        node.scheduler_initialize();
+
+    // tracks which nodes advanced data and which did not
+    std::vector<bool> advancements(nodes.size());
+
+    // the main loop, one iteration of which is called a generation
+    do {
+
+        // update all nodes in parallel
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            nodes[i].scheduler_update([&](bool advanced){
+                advancements[i] = advanced;
+            });
+        }
+
+        // synchronization barrier
+        this->wait_for_all_callbacks();
+
+        // post-update all nodes
+        // (synchronously, since post_update runs in the sched. thread)
+        for (std::size_t i = 0; i < nodes.size(); ++i) {
+            nodes[i].scheduler_post_update(advancements[i]);
+        }
+
+    } while (at_least_one_is_true(advancements));
+
+    // pipeline termination
+    for (auto& node : nodes)
+        node.scheduler_terminate();
+}
+```

@@ -118,7 +118,7 @@ my_other_node.can_advance([&](){
 In the code snippets above you learned how to define hubs and compute nodes. The last thing that remains is adding a scheduler and letting it run the pipeline to completion:
 
 ```cpp
-noarr::pipelines::DebuggingScheduler scheduler;
+noarr::pipelines::SimpleScheduler scheduler;
 scheduler.add(my_hub);
 scheduler.add(my_node);
 scheduler.add(my_other_hub);
@@ -130,7 +130,7 @@ scheduler.run();
 
 The scheduler calls `can_advance` on all nodes, trying to get them to advance. If all the nodes are *idle* and also respond negatively to `can_advance`, it means there are no nodes to be advanced and the pipeline terminates.
 
-The library currently provides only the `DebuggingScheduler` whose implementation is described in a [later section on debugging](#debugging). It is possible to add more sophisticated schedulers later.
+The library currently provides only the `SimpleScheduler` and the `DebuggingScheduler`. This is because implementing an optimal scheduler is a complicated task and was left as a future improvement. However the `SimpleScheduler` provides a good-enough amount of parallelism in most cases. The `DebuggingScheduler` is described more in a [later section on debugging](#debugging).
 
 Each node can perform some action during the pipeline initialization and termination by using the corresponding event methods:
 
