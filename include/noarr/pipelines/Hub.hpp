@@ -130,11 +130,11 @@ public:
     void allocate_envelope(Device::index_t device_index) {
         guard_scheduler_thread();
 
-        auto& new_envelope = envelopes.emplace_back(
+        envelopes.emplace_back(
             hardware_manager.allocate_buffer(device_index, buffer_size)
         );
         
-        empty_envelopes[device_index].push_back(&new_envelope);
+        empty_envelopes[device_index].push_back(&envelopes.back());
 
         say("Allocated new envelope on device: " + std::to_string(device_index));
     }
@@ -303,8 +303,8 @@ public:
         Envelope_t& envelope = *empty_envelopes[from_device].back();
         empty_envelopes[from_device].pop_back();
         
-        auto& new_chunk = chunks.emplace_back(envelope, from_device);
-        chunk_queue.push_back(&new_chunk);
+        chunks.emplace_back(envelope, from_device);
+        chunk_queue.push_back(&chunks.back());
 
         return envelope;
     }
@@ -360,8 +360,8 @@ public:
         Chunk_t& top_chunk = *chunk_queue.front();
 
         // transfer its envelopes into trash
-        for (auto&& [_, envelope] : top_chunk.envelopes) {
-            trashed_envelopes.push_back(envelope);
+        for (auto&& index_envelope : top_chunk.envelopes) {
+            trashed_envelopes.push_back(index_envelope.second);
         }
 
         // remove the chunk from the queue
@@ -560,8 +560,8 @@ private:
         // the production did happen, the envelope in the link is full of data
         if (link.was_committed) {
             // create a new chunk and push it into the queue
-            auto& new_chunk = chunks.emplace_back(*link.envelope, link.device_index);
-            chunk_queue.push_back(&new_chunk);
+            chunks.emplace_back(*link.envelope, link.device_index);
+            chunk_queue.push_back(&chunks.back());
             
             say("New chunk produced by: " + link.guest_node->label);
         }
@@ -637,10 +637,10 @@ private:
             // the chunk was modified
             if (link.type == LinkType::modifying) {
                 // trash all envelopes except the one that was modified
-                for (auto&& [index, envelope] : top_chunk.envelopes) {
-                    if (index == link.device_index)
+                for (auto&& index_envelope : top_chunk.envelopes) {
+                    if (index_envelope.first == link.device_index)
                         continue; // do not trash the modified envelope
-                    trashed_envelopes.push_back(envelope);
+                    trashed_envelopes.push_back(index_envelope.second);
                 }
 
                 // rebuild the envelope set for the chunk
@@ -803,12 +803,14 @@ public:
      * Creates a new link for which this hub is the host
      */
     Link_t& create_link(LinkType type, Device::index_t device_index, bool autocommit) {
-        return links.emplace_back(
+        links.emplace_back(
             this,
             type,
             device_index,
             autocommit
         );
+
+        return links.back();
     }
 
     /**
