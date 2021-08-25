@@ -116,10 +116,14 @@ Synchronous memory transfers are only used in hubs in the `peek_top_chunk` metho
 
 ## Dummy GPU
 
-The hardware manager lets you to register a dummy GPU device to test all the memory transfers without the need for having and actual GPU available. You register the dummy GPU by calling:
+Sometimes, we may not have access to a GPU device, yet we want to develop and test our pipeline. We might want to do that to debug all the memory transfers and buffer allocations for the GPU (e.g. our pipeline might stop prematurely if we do not have enough envelopes allocated). We might also want to do that as a fallback in case the computer running the pipeline does not have a GPU available.
+
+The dummy GPU, from the perspective of the pipeline, is yet another device with the index `Device::DUMMY_GPU_INDEX`. Memory transfers from the host to the dummy gpu do happen, like with any other device, but the buffers allocated for the dummy GPU are actually just plain `malloc` RAM allocations on the host and can be accessed by the CPU just like `Device::HOST_INDEX` buffers.
+
+The corresponding memory transferers are not registered in the hardware manager by default, so we need to call the following method before using the dummy GPU:
 
 ```cpp
 HardwareManager::default_instance().register_dummy_gpu();
 ```
 
-From that point on, you can use `Device::DUMMY_GPU_INDEX` device index for envelope allocations. These envelopes will be allocated in the host memory (RAM), so you can access them just like `Device::HOST_INDEX` envelopes, but they will be properly copied within hubs, as if they were in another device.
+Also note that the dummy GPU does not fake CUDA kernel executions or any other GPU-specific operations. It only simulates the memory transfers within noarr pipelines.
