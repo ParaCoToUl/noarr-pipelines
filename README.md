@@ -70,3 +70,12 @@ cmake --build .
 # (this step differs by platform, this example is for linux)
 ./test-runner
 ```
+
+
+## Future work
+
+Here are listed larger features that would be ideally added into the library in the future:
+
+- **Advanced scheduler**: A scheduler that would attain maximal levels of parallelism within the pipeline.
+- **Async compute node thread recycling**: The `AsyncComputeNode` currently creates a new thread for each execution. A less wasteful implementation would reuse only one thread, or possibly utilize a thread pool shared across all `AsyncComputeNode`s.
+- **Memory transferrers thread recycling**: Just like the `AsyncComputeNode`, memory transferers currently also create a new thread for each transfers. Recycling a single thread would be less wasteful and may improve performance.

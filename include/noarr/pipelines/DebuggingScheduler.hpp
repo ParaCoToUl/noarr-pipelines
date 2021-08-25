@@ -14,14 +14,9 @@
 namespace noarr {
 namespace pipelines {
 
-/*
-    TODO: implement a proper "Scheduler" class that will do parallelism
-
-    A naive scheduler implementation with no parallelism.
- */
-
 /**
  * A scheduler that executes nodes in a deterministic, synchronous way
+ * (a naive scheduler implementation with no parallelism)
  */
 class DebuggingScheduler {
 private:
