@@ -27,7 +27,7 @@ When a chunk of data enters a *hub*, it is located on one device (say the host).
 An envelope has five main properties:
 
 - **Buffer pointer**: This pointer points to the buffer containing the data of the envelope. The buffer is typically allocated by the hub, but may also be provided by the user.
-- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data.
+- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data. If all the chunks have the same structure (e.g. images with the same resolution), this property might not even be needed, but the chunks are heterogenous, this property is what desribes the structure of the chunk.
 - **Device index**: This value describes the location of the data (host memory or GPU memory).
 - **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope. All envelopes in a hub have the same size (the size is more like capacity, the actual data size should be stored in the *structure* property).
 - **Type**: The type of the envelope is the value of two template parameters, the first specifies the type of the *structure* property (e.g. `std::size_t`, `std::array<std::size_t, 2>`) and the second specifies the type of the *buffer pointer* (e.g. `float`, `pixel_t`, `char`, `void`).
