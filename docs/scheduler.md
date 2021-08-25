@@ -51,21 +51,14 @@ The `Node` class exposes four methods that are called by a scheduler:
 
 The scheduling logic could be summarized in pseudocode like this:
 
-```txt
-1) call scheduler_initialize on each node
-    in the order they were registered
-
-2) Handle each node independently in parallel:
-2.1)    Call scheduler_update
-2.2)    Wait for the callback
-2.3)    Call scheduler_post_update
-
-3) Observe all nodes and look for the stopping condition
-3.1)    When found, stop the task 2)
-
-4) call scheduler_terminate on each node
-    in the order they were registered
-```
+1. call `scheduler_initialize` on each node in the order they were registered
+2. Handle each node independently in parallel:
+    1. Call `scheduler_update`
+    2. Wait for the `callback`
+    3. Call `scheduler_post_update`
+3. Observe all nodes and look for the stopping condition
+    1. When found, stop the task `2.`
+4. call `scheduler_terminate` on each node in the order they were registered
 
 As you can see, the `scheduler_update` method is called regardless of its output, so it may happen that the `can_advance` of a node is called many times even though it returns `false`. The scheduler does not know, how are all the nodes related, so it has to check.
 

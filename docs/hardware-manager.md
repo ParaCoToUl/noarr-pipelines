@@ -118,13 +118,3 @@ HardwareManager::default_instance().register_dummy_gpu();
 ```
 
 From that point on, you can use `Device::DUMMY_GPU_INDEX` device index for envelope allocations. These envelopes will be allocated in the host memory (RAM), so you can access them just like `Device::HOST_INDEX` envelopes, but they will be properly copied within hubs, as if they were in another device.
-
-
-## Writing custom GPGPU framework extension
-
-To write an extension to another GPGPU framework, you can take the cuda pipelines extension and modify it to suit your needs. You need to:
-
-1. Provide a static method that registers your extension in the hardware manager.
-2. Define a mapping between noarr device indices and the GPGPU framework device indices.
-3. Implement memory allocators and transferers.
-4. Optionally provide extended compute nodes for more convenience.
