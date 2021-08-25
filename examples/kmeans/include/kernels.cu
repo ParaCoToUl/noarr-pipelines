@@ -4,6 +4,15 @@
 
 #include "kernels.hpp"
 
+/*
+    Each kernel has a corresponding runner function that:
+    - lets the kernels be linked from the non-cuda part of the program
+        (kernels cannot be linked by the linker, only functions can)
+    - performs minor processing of the given arguments,
+        specifies the block size at which to run the kernel,
+        and checks for errors after the kernel finishes
+ */
+
 
 //////////////////////////////////
 // clear_sums_and_counts_kernel //
