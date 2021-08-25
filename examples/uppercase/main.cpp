@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
     // the scheduler tries to eagerly advance all nodes that are idle and
     // let themselves be advanced (have all links ready and
     // can_advance returns true)
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(reader);
     scheduler.add(capitalizer);
     scheduler.add(writer);

@@ -224,7 +224,7 @@ void kmeans(
     ////////////////////////////////////////////////
 
     // setup pipeline scheduler (give it all pipeline nodes)
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(points_hub);
     scheduler.add(assignments_hub);
     scheduler.add(centroids_hub);

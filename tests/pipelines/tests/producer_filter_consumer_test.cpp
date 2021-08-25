@@ -8,7 +8,7 @@
 #include <noarr/pipelines/Envelope.hpp>
 #include <noarr/pipelines/Hub.hpp>
 #include <noarr/pipelines/HardwareManager.hpp>
-#include <noarr/pipelines/DebuggingScheduler.hpp>
+#include <noarr/pipelines/SimpleScheduler.hpp>
 #include <noarr/pipelines/LambdaComputeNode.hpp>
 
 using namespace noarr::pipelines;
@@ -80,7 +80,7 @@ TEST_CASE("Producer filter consumer example", "[prod_fil_con][hub]") {
         });
     }
 
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(hub_A);
     scheduler.add(hub_B);
     scheduler.add(producer);

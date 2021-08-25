@@ -57,7 +57,7 @@ TEST_CASE("Cuda compute node", "[cuda_compute_node]") {
         hub.flow_data_to(modifier);
     }
 
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(hub);
     scheduler.add(modifier);
     scheduler.add(consumer);

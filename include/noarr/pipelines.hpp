@@ -31,3 +31,4 @@
 
 // scheduling
 #include "noarr/pipelines/DebuggingScheduler.hpp"
+#include "noarr/pipelines/SimpleScheduler.hpp"

@@ -8,7 +8,7 @@
 #include <noarr/pipelines/Envelope.hpp>
 #include <noarr/pipelines/Hub.hpp>
 #include <noarr/pipelines/HardwareManager.hpp>
-#include <noarr/pipelines/DebuggingScheduler.hpp>
+#include <noarr/pipelines/SimpleScheduler.hpp>
 #include <noarr/pipelines/LambdaComputeNode.hpp>
 
 using namespace noarr::pipelines;
@@ -77,7 +77,7 @@ TEST_CASE("Producer modifier consumer example", "[prod_mod_con][hub]") {
 
     item_hub.flow_data_to(modifier);
 
-    DebuggingScheduler scheduler;
+    SimpleScheduler scheduler;
     scheduler.add(item_hub);
     scheduler.add(producer);
     scheduler.add(modifier);
