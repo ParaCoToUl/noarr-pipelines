@@ -26,13 +26,13 @@ When a chunk of data enters a *hub*, it is located on one device (say the host).
 
 An envelope has five main properties:
 
-- **Buffer pointer**: This pointer points to the buffer containing the data of the envelope.
+- **Buffer pointer**: This pointer points to the buffer containing the data of the envelope. The buffer is typically allocated by the hub, but may also be provided by the user.
 - **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data.
 - **Device index**: This value describes the location of the data (host memory or GPU memory).
-- **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope.
+- **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope. All envelopes in a hub have the same size (the size is more like capacity, the actual data size should be stored in the *structure* property).
 - **Type**: The type of the envelope is the value of two template parameters, the first specifies the type of the *structure* property (e.g. `std::size_t`, `std::array<std::size_t, 2>`) and the second specifies the type of the *buffer pointer* (e.g. `float`, `pixel_t`, `char`, `void`).
 
-Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub.
+Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub. In certain situations, the user might provide an existing buffer to a hub to wrap it inside an envelope. This is useful for working with memory-mapped files.
 
 The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 chars in each envelope:
 

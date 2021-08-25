@@ -299,6 +299,46 @@ my_node.advance_async([&](){
 The performed modifications need not be small, a better defining feature is that they are in-place.
 
 
+## Envelopes from existing buffers
+
+Sometimes you have an existing pointer to some data, say a memory-mapped file, an already allocated CUDA pointer, etc... You can provide this pointer to a hub and the hub will wrap it inside a new envelope. This envelope will then flow through the hub just like any other envelope:
+
+```cpp
+// an existing C pointer we want to use
+int* ptr = (int*) malloc(sizeof(int) * 1024);
+
+// create a hub
+auto my_hub = Hub<std::size_t, int>(sizeof(int) * 1024);
+
+// wrap the pointer in a buffer instance first
+Buffer my_buffer = Buffer::from_existing(
+    // where is the buffer located
+    Device::HOST_INDEX,
+    
+    // the pointer
+    ptr,
+
+    // the buffer size, has to match the hub buffer size
+    // (the argument of the hub constructor)
+    sizeof(int) * 1024
+);
+
+// give the buffer instance to the hub
+my_hub.create_envelope(std::move(my_buffer));
+
+// ... rest of the pipeline ...
+
+// free the C pointer
+free(ptr);
+```
+
+The `create_envelope` function works just like the `allocate_envelope` function, but it receives the buffer as an argument, instead of allocating it.
+
+The `Buffer` instance is a lower-level object that envelopes internally use. Typically, it manages an automatically allocated memory and so when the `Buffer` is destroyed, the memory is freed (just like `std::unique_ptr`), but since we already have memory allocated, we want to just wrap it. That is why we use the `Buffer::from_existing` method. In this mode, the `Buffer` instance does not handle memory management, and acts only as a wrapper. The underlying wrapped C buffer has to be `free`d manually. The `Buffer` class is documented later in the section on the [Hardware Manager](./hardware-manager.md#buffer).
+
+Envelopes created from an existing buffer act just like any other envelopes with one exception: They cannot have their contents swapped by the `swap_contents_with` function. This is because the swapping transfers buffers between hubs which makes it more difficult to track them through the pipeline, so we decided to disallow it.
+
+
 ## Dataflow strategy
 
 We talked about various link types and how they behave, but when we demonstrated them, we never combined many links of different types together (e.g. consuming and modifying). This section desribes why and how to do that.

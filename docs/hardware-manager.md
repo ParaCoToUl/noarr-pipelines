@@ -23,9 +23,14 @@ An allocation by the `HardwareManager` returns a `Buffer` instance. The class is
 - **Buffer pointer**: Points to the address where the allocated buffer resides.
 - **Bytes**: The size of the buffer in bytes.
 - **Device index**: The device on which the buffer was allocated.
-- **Allocator pointer**: Pointer to the allocator to perform deallocation from the destructor.
+- **Allocator pointer**: Pointer to the allocator to perform deallocation from the destructor. May be `nullptr`, if the buffer was not allocated by the hardware manager, but instead created by wrapping an existing poitner.
 
-The `Buffer` instance automatically deallocates the underlying buffer when destroyed.
+The `Buffer` instance can exist in two modes:
+
+1. Created by the `HardwareManager` during new data allocation.
+2. Created by the user using `Buffer::from_existing(device, pointer, size)`.
+
+In the first mode, the `Buffer` instance automatically deallocates the underlying buffer when destroyed. In the second mode it only wraps an existing pointer and it will not attempt to deallocate it. The second mode is meant as an adapter between an external memory management system and the internal memory management of noarr pipelines. You can ask the buffer, whether it is in the second mode using `buffer.wraps_existing_buffer()`.
 
 This class is the primary component of an envelope.
 
