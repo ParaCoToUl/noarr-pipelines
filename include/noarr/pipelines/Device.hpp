@@ -9,6 +9,11 @@ namespace pipelines {
 /**
  * Represents a device that has memory
  * (host cpu or a gpu device)
+ * 
+ * This type ended up not really being used at the end.
+ * Only the Device::index_t is used. This type is meant to hold
+ * additional metadata about a device. Maybe it can become used
+ * in the future.
  */
 struct Device {
     using index_t = std::int8_t;

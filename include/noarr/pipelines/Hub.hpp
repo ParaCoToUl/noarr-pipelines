@@ -149,6 +149,28 @@ public:
     }
 
     /**
+     * Creates a new envelope from an existing buffer instance
+     */
+    void create_envelope(Buffer buffer) {
+        guard_scheduler_thread();
+
+        assert(
+            buffer.bytes == buffer_size &&
+            "The given buffer has to have the exact same size as all the other buffers in the hub."
+        );
+
+        Device::index_t device_index = buffer.device_index;
+
+        envelopes.emplace_back(
+            std::move(buffer)
+        );
+        
+        empty_envelopes[device_index].push_back(&envelopes.back());
+
+        say("Created new envelope from existing buffer on device: " + std::to_string(device_index));
+    }
+
+    /**
      * Sets the maximum allowed queue length
      */
     void set_max_queue_length(std::size_t max_length) {

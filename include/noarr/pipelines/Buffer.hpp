@@ -94,6 +94,14 @@ public:
     }
 
     /**
+     * Returns true if the buffer instance only wraps an existing
+     * C buffer and does not handle its lifetime.
+     */
+    bool wraps_existing_buffer() {
+        return allocator == nullptr;
+    }
+
+    /**
      * Allocates a new buffer with a given allocator.
      * The memory WILL be released when this instance is destroyed.
      */
