@@ -62,17 +62,10 @@ The `Device::DEVICE_INDEX` is the device 0, but to represent other devices you c
 Device::index_t fifth_device_index = (Device::index_t) 4;
 ```
 
-If you have only two devices, you can use the two defined constants:
-
-```cpp
-Device::DEVICE0_INDEX // same as Device::DEVICE_INDEX
-Device::DEVICE1_INDEX
-```
-
 When you define a `CudaComputeNode`, it creates the cuda stream for the device with index 0. You can override this behaviour by specifying a constructor parameter:
 
 ```cpp
-auto my_node = LambdaCudaComputeNode(Device::DEVICE1_INDEX);
+auto my_node = LambdaCudaComputeNode((Device::index_t) 1);
 ```
 
 The device to which the node belongs could also be accessed as a member variable, either as a noarr pipelines device index, or as a cuda device index:
