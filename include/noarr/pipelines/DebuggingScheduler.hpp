@@ -9,6 +9,7 @@
 #include <condition_variable>
 
 #include "Node.hpp"
+#include "Scheduler.hpp"
 #include "SchedulerLogger.hpp"
 
 namespace noarr {
@@ -18,14 +19,9 @@ namespace pipelines {
  * A scheduler that executes nodes in a deterministic, synchronous way
  * (a naive scheduler implementation with no parallelism)
  */
-class DebuggingScheduler {
+class DebuggingScheduler : public Scheduler {
 private:
     std::unique_ptr<SchedulerLogger> logger;
-
-    /**
-     * Nodes that the scheduler periodically updates
-     */
-    std::vector<Node*> nodes;
 
 public:
 
@@ -44,8 +40,8 @@ public:
     /**
      * Registers a node to be updated by the scheduler
      */
-    void add(Node& node) {
-        this->nodes.push_back(&node);
+    virtual void add(Node& node) override {
+        Scheduler::add(node);
 
         if (logger)
             logger->after_node_added(node);
@@ -58,7 +54,7 @@ public:
     /**
      * Runs the pipeline until no nodes can be advanced.
      */
-    void run() {
+    virtual void run() override {
         this->initialize_pipeline(); // NOTE: need not be called explicitly
 
         while (!this->pipeline_terminated) {

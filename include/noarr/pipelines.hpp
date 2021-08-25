@@ -30,5 +30,6 @@
 #include "noarr/pipelines/Hub.hpp"
 
 // scheduling
+#include "noarr/pipelines/Scheduler.hpp"
 #include "noarr/pipelines/DebuggingScheduler.hpp"
 #include "noarr/pipelines/SimpleScheduler.hpp"

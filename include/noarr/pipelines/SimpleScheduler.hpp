@@ -1,14 +1,13 @@
 #ifndef NOARR_PIPELINES_SIMPLE_SCHEDULER_HPP
 #define NOARR_PIPELINES_SIMPLE_SCHEDULER_HPP
 
-#include <iostream>
-#include <string>
 #include <cassert>
 #include <vector>
 #include <mutex>
 #include <condition_variable>
 
 #include "Node.hpp"
+#include "Scheduler.hpp"
 
 namespace noarr {
 namespace pipelines {
@@ -17,40 +16,17 @@ namespace pipelines {
  * A scheduler that advances nodes in generations in parallel,
  * but at the end of each generation a synchronization barrier is present
  */
-class SimpleScheduler {
-private:
-    /**
-     * Nodes that the scheduler periodically updates
-     */
-    std::vector<Node*> nodes;
-
+class SimpleScheduler : public Scheduler {
 public:
 
     SimpleScheduler() {
         //
     }
 
-    ///////////////////////////////
-    // Pipeline construction API //
-    ///////////////////////////////
-
-    /**
-     * Registers a node to be updated by the scheduler
-     */
-    void add(Node& node) {
-        this->nodes.push_back(&node);
-    }
-
-    ///////////////////
-    // Execution API //
-    ///////////////////
-
-public:
-
     /**
      * Runs the pipeline until no nodes can be advanced.
      */
-    void run() {
+    virtual void run() override {
         assert(this->nodes.size() != 0
             && "Pipeline is empty so cannot be advanced");
 
