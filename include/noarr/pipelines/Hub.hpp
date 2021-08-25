@@ -56,6 +56,12 @@ private:
      */
     std::size_t max_queue_length = 0;
 
+    /*
+        The following memory management containers use std::deque,
+        because it guarantees that instances will not be moved,
+        which would invalidate pointers and references to them.
+     */
+
     /**
      * List of all envelopes in this hub
      * (for memory management)
@@ -92,6 +98,9 @@ private:
      * Adding new chunk is "push_back" and consuming next chunk is "pop_front".
      * 
      * The chunk that is about to be consumed is the "top chunk" (at index [0]).
+     * 
+     * The container is deque instead of queue because we need to be able
+     * to iterate over the chunks in order to implement memory transfers.
      */
     std::deque<Chunk_t*> chunk_queue;
 
