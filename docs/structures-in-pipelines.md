@@ -59,7 +59,7 @@ my_node.advance_async([&](){
 });
 ```
 
-Noarr pipelines also provides an extension that gives you some helper functions for working with noarr structures via bags:
+Noarr pipelines also provides an extension that gives us some helper functions for working with noarr structures via bags:
 
 ```cpp
 // include the extension
@@ -89,4 +89,4 @@ The extension provides two self-explanatory functions:
 - `bag_from_envelope(envelope)`
 - `bag_from_link(link)`
 
-The constructed bag receives a copy of the structure, so you should only create and use the bag after you are done modifying the envelope structure.
+The constructed bag receives a copy of the structure, so we should only create and use the bag after we are done modifying the envelope structure.

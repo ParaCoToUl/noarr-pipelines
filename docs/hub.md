@@ -4,7 +4,7 @@
 
 - **Queuing chunks**: The hub is implemented as a queue of *chunks*. Some *links* produce new *chunks* and other *links* consume *chunks*. This lets the producer and consumer *nodes* run independantly.
 - **Memory transfer**: Each one of the *links* may want to access the data on a different device. The *hub* has to perform memory transfers so that these requirements are satisfied. A memory transfer involves creating a copy of one envelope on another device. This means that a *chunk* of data is represented by a set of *envelopes* on different devices, all holding the same data. If the *hub* has enough available *envelopes*, it can overlay these memory transfers with other operations (like producing and consuming) to increase the throughput of the pipeline.
-- **Envelope lifetime**: A *hub* manages a pool of *envelopes* and uses them to store the data passing through it. When you create a *hub*, you specify how many envelopes on what devices should be allocated. When a *compute node* wants to produce a chunk, the *hub* will give it an empty *envelope* to be populated by the data and then it inserts the *envelope* into the internal queue as a new *chunk*. Then this *chunk* may be copied to other devices, using up more *envelopes* from the pool of unused envelopes. When a *chunk* is consumed, all of its *envelopes* are returned back to the pool of unused envelopes. An envelope may never move from one *hub* to another.
+- **Envelope lifetime**: A *hub* manages a pool of *envelopes* and uses them to store the data passing through it. When we create a *hub*, we specify how many envelopes on what devices should be allocated. When a *compute node* wants to produce a chunk, the *hub* will give it an empty *envelope* to be populated by the data and then it inserts the *envelope* into the internal queue as a new *chunk*. Then this *chunk* may be copied to other devices, using up more *envelopes* from the pool of unused envelopes. When a *chunk* is consumed, all of its *envelopes* are returned back to the pool of unused envelopes. An envelope may never move from one *hub* to another.
 
 
 ## Produce-transfer-consume in detail
@@ -71,9 +71,9 @@ Chunk( [Env_B, CPU: Chunk_2] )
 
 ## The flow of envelopes
 
-You already have a decent idea of how envelopes flow though a hub, now we will go over it once more in full detail.
+We already have a decent idea of how envelopes flow though a hub, now we will go over it once more in full detail.
 
-**Allocation:** Envelopes are explicitly allocated right after you create a hub. Their size is the same for all envelopes in one hub and it is provided through the constructor of the hub. By the manual allocation you specify how many of them should be available for what device.
+**Allocation:** Envelopes are explicitly allocated right after we create a hub. Their size is the same for all envelopes in one hub and it is provided through the constructor of the hub. By the manual allocation we specify how many of them should be available for what device.
 
 ```cpp
 auto my_hub = Hub<std::size_t, float>(
@@ -84,11 +84,11 @@ my_hub.allocate_envelopes(Device::HOST_INDEX, 2); // 2 on the host
 my_hub.allocate_envelopes(Device::DEVICE_INDEX, 4); // 4 on the device
 ```
 
-The number of envelopes impacts the behaviour of the hub. If you have no envelopes for a given device and a consuming link requests data for that device, it may never be satisfied. The consuming node will not be able to advance and advancing the hub will not solve the situation either. Therefore no nodes can be advanced and the pipeline terminates as if it has successfully done all the work. Having only one envelope allows the pipeline to function, but it cannot overlay any two operations, so it either produces or transfers or consumes. Having two envelopes is probably optimal in most situations that use the hub as a queue. There are, however, other ways to use the hub that may require different numbers of envelopes for optimal performance.
+The number of envelopes impacts the behaviour of the hub. If we have no envelopes for a given device and a consuming link requests data for that device, it may never be satisfied. The consuming node will not be able to advance and advancing the hub will not solve the situation either. Therefore no nodes can be advanced and the pipeline terminates as if it has successfully done all the work. Having only one envelope allows the pipeline to function, but it cannot overlay any two operations, so it either produces or transfers or consumes. Having two envelopes is probably optimal in most situations that use the hub as a queue. There are, however, other ways to use the hub that may require different numbers of envelopes for optimal performance.
 
-Although it is typical to allocate all envelopes during the construction of the hub, you may also call the `allocate_envelope(s)` methods anytime you want. The hub will be able to use the new envelope right after the allocation finishes. The only constraint is that allocations should be executed by the scheduler thread only.
+Although it is typical to allocate all envelopes during the construction of the hub, we may also call the `allocate_envelope(s)` methods anytime we want. The hub will be able to use the new envelope right after the allocation finishes. The only constraint is that allocations should be executed by the scheduler thread only.
 
-**Unused pool:** When an envelope is allocated, it enters the so called *pool of unused envelopes*. This pool contains envelopes that are not present in the chunk queue and can be used for new chunks or for memory transfers. Since each envelope belongs to only one device, you could imagine that this pool is actually multiple pools - one for each device. If this pool becomes empty of envelopes for a given device, no chunk production or memory transfers for that device may occur. The hub waits for chunks in the queue to be consumed, so that envelopes get released and can be reused.
+**Unused pool:** When an envelope is allocated, it enters the so called *pool of unused envelopes*. This pool contains envelopes that are not present in the chunk queue and can be used for new chunks or for memory transfers. Since each envelope belongs to only one device, we could imagine that this pool is actually multiple pools - one for each device. If this pool becomes empty of envelopes for a given device, no chunk production or memory transfers for that device may occur. The hub waits for chunks in the queue to be consumed, so that envelopes get released and can be reused.
 
 **Chunk queue:** When a producing link receives an envelope from the unused pool and the production is commited (if not, the envelope returns back to the unused pool), the envelope enters the chunk queue as the only envelope in a new chunk. If the consuming link requests the same device, the envelope just sits through the queue and when the chunk is consumed, the envelope is returned to the unused pool. If the consuming link requests a different device, memory transfer has to take place before consumption is allowed.
 
@@ -103,9 +103,9 @@ When the memory transfer finishes, the source envelope is not released. It remai
 
 ## Manual chunk queue manipulation
 
-We have described how *links* can produce and consume chunks. It might sometimes be needed to do these actions manually. You can imagine a scenario, where you have a compute node that uses one hub as an accumulator. With each iteration it simultaneously consumes one chunk from the hub and produces one chunk as a replacement. We need to initialize the accumulator hub with some zero-valued chunk when the pipeline starts and then read out the final value when the pipeline finishes.
+We have described how *links* can produce and consume chunks. It might sometimes be needed to do these actions manually. We can imagine a scenario, where we have a compute node that uses one hub as an accumulator. With each iteration it simultaneously consumes one chunk from the hub and produces one chunk as a replacement. We need to initialize the accumulator hub with some zero-valued chunk when the pipeline starts and then read out the final value when the pipeline finishes.
 
-There are a few functions that should help you in such a scenario:
+There are a few functions that should help us in such a scenario:
 
 ```cpp
 // Takes an envelope from the pool of unused envelopes for the host
@@ -163,9 +163,9 @@ my_node.terminate([&](){
 });
 ```
 
-> **Note:** Using a hub for a single integer value is a bad idea, you should use a regular shared variable for that. This is just to demonstrate the concept. Use hubs only when you actually benefit from their features.
+> **Note:** Using a hub for a single integer value is a bad idea, we should use a regular shared variable for that. This is just to demonstrate the concept. We should use hubs only when we actually benefit from their features.
 
-You may also want to push or peek a chunk from another device than the host. The two functions let you specify the device index in the first argument:
+We may also want to push or peek a chunk from another device than the host. The two functions let us specify the device index in the first argument:
 
 ```cpp
 auto& gpu_envelope = my_hub.push_new_chunk(Device::DEVICE_INDEX);
@@ -211,7 +211,7 @@ my_node.terminate([&](){
 });
 ```
 
-You might ponder how does one combine modifying and consuming links, if they both compete for the *top chunk*. This problem is explored in the following section on [dataflow strategy](#dataflow-strategy).
+We might ponder how does one combine modifying and consuming links, if they both compete for the *top chunk*. This problem is explored in the following section on [dataflow strategy](#dataflow-strategy).
 
 Here is the list of all the link types and their construction:
 
@@ -227,7 +227,7 @@ auto& link = node.link(hub.to_peek(Device::HOST_INDEX));
 
 ## Committing links
 
-When you create a new link, if it is not a peeking link, it has a second boolean argument called `autocommit`. The producing, consuming and modifying links are special in that they perform an operation that changes the state of the hub (adding, removing or modifying a chunk). But you sometimes might want to have a producing link, that does not produce always. Or a consuming link that sometimes does not consume. That is why we define the term *committing* a link. The link tries to perform an action. If that action was indeed performed, the link was *committed*.
+When we create a new link, if it is not a peeking link, it has a second boolean argument called `autocommit`. The producing, consuming and modifying links are special in that they perform an operation that changes the state of the hub (adding, removing or modifying a chunk). But we sometimes might want to have a producing link, that does not produce always. Or a consuming link that sometimes does not consume. That is why we define the term *committing* a link. The link tries to perform an action. If that action was indeed performed, the link was *committed*.
 
 An example would be producing chunks from a file for which we do not know the size. We might try to produce a new chunk but we reach the end of file at that point. Therefore we do not commit the producing link, since we did not even use it.
 
@@ -262,14 +262,14 @@ my_node.advance_async([&](){
 The committing behaviour of links was already described. The following list summarizes what happens if a link is not commited.
 
 - **Producing**: When a producing link is not committed, its envelope returns to the pool of unused envelopes and the chunk queue does not change.
-- **Consuming**: When a consuming link is not committed, the *top chunk* is not removed from the queue. You should not modify the provided envelope if you do not consume the chunk, as it would make the top chunk inconsistent between devices.
-- **Modifying**: When a modifying link is not committed, envelopes on other devices are not released to the pool of unused envelopes. You should not modify the provided envelope if you do not commit the link, as it would make the top chunk inconsistent between devices.
+- **Consuming**: When a consuming link is not committed, the *top chunk* is not removed from the queue. We should not modify the provided envelope if we do not consume the chunk, as it would make the top chunk inconsistent between devices.
+- **Modifying**: When a modifying link is not committed, envelopes on other devices are not released to the pool of unused envelopes. We should not modify the provided envelope if we do not commit the link, as it would make the top chunk inconsistent between devices.
 - **Peeking**: It makes no sense to define commits for peeking links, as they do not modify the state of the hub in any way.
 
 
 ## Envelope content swapping
 
-Envelopes give you the option of swapping their contents by doing:
+Envelopes give us the option of swapping their contents by doing:
 
 ```cpp
 first_envelope.swap_contents_with(other_envelope);
@@ -277,7 +277,7 @@ first_envelope.swap_contents_with(other_envelope);
 
 This swap is very efficient, as it does not actually copy the content, but instead swaps the buffer pointers and structures. This, on the other hand, gives us the limitation, that this kind of swap can only be performed, if the two envelopes have the same type, size and belong to the same device.
 
-This trick can be used to speed up the pipeline if you have a compute node that consumes chunks from one hub and moves them to another hub with minimal modifications:
+This trick can be used to speed up the pipeline, if we have a compute node that consumes chunks from one hub and moves them to another hub with minimal modifications:
 
 ```cpp
 auto& input_link = my_node.link(
@@ -301,7 +301,7 @@ The performed modifications need not be small, a better defining feature is that
 
 ## Envelopes from existing buffers
 
-Sometimes you have an existing pointer to some data, say a memory-mapped file, an already allocated CUDA pointer, etc... You can provide this pointer to a hub and the hub will wrap it inside a new envelope. This envelope will then flow through the hub just like any other envelope:
+Sometimes we have an existing pointer to some data, say a memory-mapped file, an already allocated CUDA pointer, etc... We can provide this pointer to a hub and the hub will wrap it inside a new envelope. This envelope will then flow through the hub just like any other envelope:
 
 ```cpp
 // an existing C pointer we want to use
@@ -401,7 +401,7 @@ consumer_node.post_advance([&](){
 });
 ```
 
-As you can see, the *dataflow strategy* can be changed by calling:
+As we can see, the *dataflow strategy* can be changed by calling:
 
 ```cpp
 my_hub.flow_data_to(my_link);
@@ -409,7 +409,7 @@ my_hub.flow_data_to(my_link);
 
 > **Notice:** Functions specified here (for modifying the dataflow) may only be called from the *scheduler thread*.
 
-You only really need to specify the dataflow if you have multiple consuming, modifying, or peeking links. If you have only one such link, the strategy is infered implicitly by the hub during the pipeline initialization. This inferring can also be triggered explicitly:
+We only really need to specify the dataflow if we have multiple consuming, modifying, or peeking links. If we have only one such link, the strategy is infered implicitly by the hub during the pipeline initialization. This inferring can also be triggered explicitly:
 
 ```cpp
 bool success = my_hub.infer_dataflow();
@@ -417,16 +417,16 @@ bool success = my_hub.infer_dataflow();
 
 The interence only succeeds if there is only one consuming, modifying or peeking link present.
 
-Producing links may not be part of a *dataflow policy* since the data does not flow towards them, but away from them. The order in which producing links are made ready is not deterministic and should not be relied on (if you have multiple producing links for a single hub). The synchronization has to be provided by the user.
+Producing links may not be part of a *dataflow policy* since the data does not flow towards them, but away from them. The order in which producing links are made ready is not deterministic and should not be relied on (if we have multiple producing links for a single hub). The synchronization has to be provided by the user.
 
-The order is also non-deterministic for non-producing links, if there are more than one of them in the *dataflow strategy*. This might happen when you have multiple peeking links independantly reading the same data. The *dataflow strategy* can be defined like this:
+The order is also non-deterministic for non-producing links, if there are more than one of them in the *dataflow strategy*. This might happen when we have multiple peeking links independantly reading the same data. The *dataflow strategy* can be defined like this:
 
 ```cpp
 my_hub.flow_data_to(my_peeking_link);
 my_hub.and_flow_data_to(my_other_peeking_link);
 ```
 
-You could add variable number of nodes in a for loop by first resetting the dataflow to empty:
+We could add variable number of nodes in a for loop by first resetting the dataflow to empty:
 
 ```cpp
 my_hub.reset_dataflow();
@@ -435,9 +435,9 @@ for (auto& link : some_links) {
 }
 ```
 
-By calling `reset_dataflow()` you empty the set of link to which data should flow. This is a valid state, but maybe useless. If there are no link for data to flow to, the hub does not prepare data for any non-consuming links and the pipeline will prematurely terminate.
+By calling `reset_dataflow()` we empty the set of link to which data should flow. This is a valid state, but maybe useless. If there are no link for data to flow to, the hub does not prepare data for any non-consuming links and the pipeline will prematurely terminate.
 
-Lastly, just for convenience, you can provide not only links to the mentioned functions, but also nodes. The hub will resolve the correct link from the given node:
+Lastly, just for convenience, we can provide not only links to the mentioned functions, but also nodes. The hub will resolve the correct link from the given node:
 
 ```cpp
 my_hub.flow_data_to(my_node);
@@ -446,7 +446,7 @@ my_hub.flow_data_to(my_node);
 
 ## Max queue length
 
-When you have a hub with a producing link, it will try to produce new chunks for as long as it has unused envelopes. This might not be the desired behaviour, as it consumes all unused envelopes and that might starve the hub for envelopes for memory transfers. To remedy this problem, you can set a maximum size of the chunk queue:
+When we have a hub with a producing link, it will try to produce new chunks for as long as it has unused envelopes. This might not be the desired behaviour, as it consumes all unused envelopes and that might starve the hub for envelopes for memory transfers. To remedy this problem, we can set a maximum size of the chunk queue:
 
 ```cpp
 my_hub.set_max_queue_length(2);
@@ -454,7 +454,7 @@ my_hub.set_max_queue_length(2);
 
 This will make sure the hub will not accept any more chunks if the queue length reaches the maximum length. Thus there will remain spare unused envelopes, available for memory transfers.
 
-This is only useful in really unusal situations, when you create a chunk from CPU, modify it from the GPU and then consume again from the CPU (needs to be transfered back to the CPU). Consider whether it is not advantageous to use multiple hubs instead, if you come across needing this feature.
+This is only useful in really unusal situations, when we create a chunk from CPU, modify it from the GPU and then consume again from the CPU (needs to be transfered back to the CPU). Consider whether it is not advantageous to use multiple hubs instead, if we come across needing this feature.
 
 Setting the queue length to zero removes the length limitation:
 
@@ -509,8 +509,8 @@ Lastly the *satisfaction of consuming, modifying and peeking links* is also eage
 
 If a consumption or modification is committed, it causes some envelopes to be released. If there are other links still looking at those envelopes, the hub also handles this situation: it will wait for these other links to finish their job before releasing those envelopes completely and reusing them. The same behaviour might occur during a dataflow strategy change.
 
-If there are multiple modifying (or consuming) links that commit on the same top chunk, the whole execution aborts with an error. It is unclear what should happen in such scenario and you should make sure it does not happen.
+If there are multiple modifying (or consuming) links that commit on the same top chunk, the whole execution aborts with an error. It is unclear what should happen in such scenario and we should make sure it does not happen.
 
 Even though there are many strange situations that may occur (and are handled properly), there are additional constraints on the dataflow strategy that make sure the dataflow makes sense (e.g. data cannot flow to producing links, it cannot flow to multiple consuming links, when having multiple modifying links they have to be on the same device).
 
-> **Note:** Really, these scenarios are edge-cases and not something a typical pipeline would use. Nonetheless they are explained here so you have a better understanding of how a hub works.
+> **Note:** Really, these scenarios are edge-cases and not something a typical pipeline would use. Nonetheless they are explained here so we have a better understanding of how a hub works.

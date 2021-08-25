@@ -5,12 +5,12 @@ In the previous section on basic concepts we already talked about *nodes*. We sa
 
 ## Construction
 
-There are two options of how to construct a compute node for your pipeline:
+There are two options of how to construct a compute node for a pipeline:
 
 - via inheritance
 - by lambda functions
 
-Most of the documentation and examples show the lambda-expression way as it allows us to define everything in one place. But if you should build more complicated nodes and pipelines, you might want to choose the inheritance approach instead.
+Most of the documentation and examples show the lambda-expression way, as it allows us to define everything in one place. But if we should build more complicated nodes and pipelines, we might want to choose the inheritance approach instead.
 
 Here is how to define a custom compute node via inheritance:
 
@@ -40,7 +40,7 @@ void use_the_node_in_a_pipeline() {
 }
 ```
 
-The disadvantage of the inheritance approach is that if you want to access any shared state (hubs or variables), you need to pass references via the constructor which makes the approach require more code and boilerplate.
+The disadvantage of the inheritance approach is that if we want to access any shared state (hubs or variables), we need to pass references via the constructor which makes the approach require more code and boilerplate.
 
 The other option is to define the custom node via lambda expressions:
 
@@ -71,7 +71,7 @@ The `LambdaComputeNode` is a special compute node that acts as a builder for a c
 
 ## Event methods
 
-A `ComputeNode` has the following event methods. These methods are automatically called by the scheduler (and so run in the scheduler thread) and you can override them to provide custom behaviour.
+A `ComputeNode` has the following event methods. These methods are automatically called by the scheduler (and so run in the scheduler thread) and we can override them to provide custom behaviour.
 
 ```cpp
 my_node.initialize([&](){
@@ -95,7 +95,7 @@ my_node.advance([&](){
 });
 ```
 
-The `advance` event method should start the actual computation of the compute node. This computation may be asynchronous and run in another thread. It is advised for expensive computations for them not to block the scheduler thread. Since this is a common requirement, noarr pipelines provide an `AsyncComputeNode` that already asynchronizes the advance method. This extended node is explained in a [following section](#async-compute-node). When the asynchronous operation finishes, it must call the `my_node.callback()` method to signal its completion. Otherwise the scheduler will remain thinking the operation is still running and will not advance the node anymore. You do not need to start an asynchronous operation if the logic you want to perform is relatively simple and/or it accesses a lot of shared variables, so you need to run in the scheduler thread anyways. But even in this case you need to call `callback` when you are done.
+The `advance` event method should start the actual computation of the compute node. This computation may be asynchronous and run in another thread. It is advised for expensive computations for them not to block the scheduler thread. Since this is a common requirement, noarr pipelines provide an `AsyncComputeNode` that already asynchronizes the advance method. This extended node is explained in a [following section](#async-compute-node). When the asynchronous operation finishes, it must call the `my_node.callback()` method to signal its completion. Otherwise the scheduler will remain thinking the operation is still running and will not advance the node anymore. We do not need to start an asynchronous operation if the logic we want to perform is relatively simple and/or it accesses a lot of shared variables, so we need to run in the scheduler thread anyways. But even in this case we need to call `callback` when we are done.
 
 After the `advance` method is invoked are all the links for this compute node ready, have envelopes attached and may be modified by the node from any thread. This remains true until the `post_advance` method finishes.
 
@@ -128,11 +128,11 @@ my_async_node.advance_async([&](){
 });
 ```
 
-This method can be used instead of the plain `advance` method and it executes in a background thread, so it does not block the scheduler thread. In most cases, when you do not need to access shared variables, you should use this compute node and this method instead of the plain `advance` method as it increases the throughput of your pipline.
+This method can be used instead of the plain `advance` method and it executes in a background thread, so it does not block the scheduler thread. In most cases, when we do not need to access shared variables, we should use this compute node and this method instead of the plain `advance` method as it increases the throughput of our pipline.
 
-Because the async compute node manages the asynchronous operation by itself, it knows when it finishes. Therefore it knows when to call the `callback` method, so you do not have to.
+Because the async compute node manages the asynchronous operation by itself, it knows when it finishes. Therefore it knows when to call the `callback` method, so we do not have to.
 
-You can still use the `advance` method in addition to the `advance_async`, when you want to access shared variables from the scheduler thread, before the asynchronous operation starts:
+We can still use the `advance` method in addition to the `advance_async`, when we want to access shared variables from the scheduler thread, before the asynchronous operation starts:
 
 ```cpp
 my_async_node.advance([&](){
@@ -183,7 +183,7 @@ The diagram excludes the `Lambda-` prefixed variants since they simply inherit f
 
 ## Custom compute node extension
 
-This section describes how you could make your own extended compute node, like the `AsyncComputeNode` or the `CudaComputeNode`.
+This section describes how we could make our own extended compute node, like the `AsyncComputeNode` or the `CudaComputeNode`.
 
 First, we need to diferentiate between two users of a compute node:
 
@@ -192,14 +192,14 @@ First, we need to diferentiate between two users of a compute node:
 
 Extending the `Node` class is mostly the same as extending any other class, but there a few design decisions that make it non-obvious how to change the behaviour of event methods.
 
-Say you are extending the `ComputeNode` and you want to have a piece of code be executed before the `advance` method is called. You would typically do something like this:
+Say we are extending the `ComputeNode` and we want to have a piece of code be executed before the `advance` method is called. We would typically do something like this:
 
 ```cpp
 class MyExtendedComputeNode : public ComputeNode {
 protected:
     void advance() override {
-        // run your logic
-        run_my_custom_logic();
+        // run our logic
+        run_our_custom_logic();
 
         // call the parent implementation
         ComputeNode::advance();
@@ -209,8 +209,8 @@ protected:
 
 There are two problems with this approach:
 
-1. You call the parent implementation, but the parent implementation does nothing. It makes no sense for an abstract compute node to be advanced. What makes sense is to call the child implementation, but that cannot be done.
-2. You expect the end-user to call your implementation in order for your code to work. But they will forget. And also if they use lambda expressions to define their compute nodes, they cannot even call the parent implementation.
+1. We call the parent implementation, but the parent implementation does nothing. It makes no sense for an abstract compute node to be advanced. What makes sense is to call the child implementation, but that cannot be done.
+2. We expect the end-user to call our implementation in order for our code to work. But they will forget. And also if they use lambda expressions to define their compute nodes, they cannot even call the parent implementation.
 
 The problem is that end-users will not call their parent implementations and the extending-users need to have their implementation be called. To get around this problem we have split each event method into an external and an internal variant. Their definitions for the `Node` class look like this:
 
@@ -233,16 +233,16 @@ protected:
 }
 ```
 
-You can see that the scheduler calls the internal variant. Since this variant is virtual, it will be called by the most inherited child first, and propagate the calls to its parents. Ultimately, the calls will hit the `Node::__internal__advance` method which finally calls the `advance` method. The external `advance` method is only overriden by the last child and does not need to care about calling parent implementations.
+We can see that the scheduler calls the internal variant. Since this variant is virtual, it will be called by the most inherited child first, and propagate the calls to its parents. Ultimately, the calls will hit the `Node::__internal__advance` method which finally calls the `advance` method. The external `advance` method is only overriden by the last child and does not need to care about calling parent implementations.
 
-So to correct the example, you would write this code:
+So to correct the example, we would write this code:
 
 ```cpp
 class MyComputeNode : public ComputeNode {
 protected:
     void __internal__advance() override {
-        // run your logic
-        run_my_custom_logic();
+        // run our logic
+        run_our_custom_logic();
 
         // call the parent implementation
         // (ultimately calls the external advance() method)

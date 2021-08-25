@@ -27,13 +27,13 @@ The external API of a scheduler is very simple:
 - the `add` method
 - the `run` method
 
-When writing your own scheduler, you can use the constructor to pass in any parameters you need. This is nothing unusal, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log to.
+When writing our own scheduler, we can use the constructor to pass in any parameters we need. This is nothing unusal, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log to.
 
 The `add` method accepts a `Node&` reference and remembers it internally to use it during scheduling. The order in which a user registers nodes has only impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers parallelize the execution and the order becomes non-deterministic.
 
-The `run` method blocks, and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If you incorrectly setup your `can_advance` conditions (or you do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly setup pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so cannot detect this situation.
+The `run` method blocks, and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If we incorrectly setup our `can_advance` conditions (or we do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly setup pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so cannot detect this situation.
 
-It is advisable that you run your pipeline only once. If you want to run it multiple times, it is better to destroy the pipeline and create a new one. The reason being that a terminated pipeline might be in a different state than the initial state before the exection. Therefore running it a second time might cause unexpected issues. That being said, there is nothing preventing you from calling `run` multiple times. If you make sure your hubs are in the right state after termination and your own added logic is also consistent, you can easily reuse the pipeline. You would save time on envelope allocation.
+It is advisable that we run our pipeline only once. If we want to run it multiple times, it is better to destroy the pipeline and create a new one. The reason being that a terminated pipeline might be in a different state than the initial state before the exection. Therefore running it a second time might cause unexpected issues. That being said, there is nothing preventing us from calling `run` multiple times. If we make sure our hubs are in the right state after termination and our own added logic is also consistent, we can easily reuse the pipeline. We would save time on envelope allocation.
 
 The `add` and `run` methods are part of the base class `Scheduler` that handles the node registration.
 
@@ -60,7 +60,7 @@ The scheduling logic could be summarized in pseudocode like this:
     1. When found, stop the task `2.`
 4. call `scheduler_terminate` on each node in the order they were registered
 
-As you can see, the `scheduler_update` method is called regardless of its output, so it may happen that the `can_advance` of a node is called many times even though it returns `false`. The scheduler does not know, how are all the nodes related, so it has to check.
+As we can see, the `scheduler_update` method is called regardless of its output, so it may happen that the `can_advance` of a node is called many times even though it returns `false`. The scheduler does not know, how are all the nodes related, so it has to check.
 
 The stopping condition could be detected by having an array of boolean flags, one for each node and having them all set to `false`. When a node update finishes without advancing data, we set its corresponding flag to `true`, interpreted as the possibility that this node has finished. This way many `true` flags may accumulate. If any node finishes update by advancing data, we know the whole pipeline state might have changed and we reset all the flags back to `false`. We watch this flag array and the moment it has all the flags set to `true`, we know that all nodes cannot advance data and so the stopping condition has been reached.
 
@@ -99,9 +99,9 @@ void noarr::pipelines::DebuggingScheduler::run() {
 }
 ```
 
-You can see that the example uses internal API methods. The logic regarding callback handling is in reality more complicated than shown in the example. It requires locks, since the callback may be called by any thread. But the basic idea is to synchronize the asynchronous operation.
+We can see that the example uses internal API methods. The logic regarding callback handling is in reality more complicated than shown in the example. It requires locks, since the callback may be called by any thread. But the basic idea is to synchronize the asynchronous operation.
 
-The primary feature of the debugging scheduler is the ability to print a log. You can construct the scheduler with an output stream:
+The primary feature of the debugging scheduler is the ability to print a log. We can construct the scheduler with an output stream:
 
 ```cpp
 auto scheduler = DebuggingScheduler(std::cout);
@@ -152,7 +152,7 @@ The scheduler will produce a log like this one:
 [scheduler]: Pipeline terminated.
 ```
 
-Each pipeline node has a label that is used in the log. You can set a label for a compute node during construction:
+Each pipeline node has a label that is used in the log. We can set a label for a compute node during construction:
 
 ```cpp
 auto my_node = LambdaComputeNode("my_node");
@@ -160,7 +160,7 @@ auto my_node = LambdaComputeNode("my_node");
 
 Internally, the `DebuggingScheduler` uses an instance of the `SchedulerLogger` class to encapsulate the logging logic.
 
-Just a classical program debugger can be stepped, the `DebuggingScheduler` can also be stepped. One step is considered to be the one attempt at advancing a node. This is how you would let the scheduler do fity steps and then leave the pipeline as is:
+Just a classical program debugger can be stepped, the `DebuggingScheduler` can also be stepped. One step is considered to be the one attempt at advancing a node. This is how we would let the scheduler do fity steps and then leave the pipeline as is:
 
 ```cpp
 DebuggingScheduler scheduler;
@@ -188,7 +188,7 @@ for (std::size_t i = 0; i < 50; ++i) {
 
 Similarly, the pipeline termination will be automatically detected and performed after the last step, that detects the stopping condition. Calling `update_next_node` after that will cause an error.
 
-You can use this feature to run the pipeline to a point, where a certain global variable changes to a required value:
+We can use this feature to run the pipeline to a point, where a certain global variable changes to a required value:
 
 ```cpp
 bool my_flag = false; // some global variable

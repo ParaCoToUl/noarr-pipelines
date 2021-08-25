@@ -2,7 +2,7 @@
 
 This section talks about the `HardwareManager` class, which is a singleton responsible for performing memory allocations, dealocations and memory transfers between devices.
 
-You can obtain the singleton instance like this:
+We can obtain the singleton instance like this:
 
 ```cpp
 auto& manager = noarr::pipelines::HardwareManager::default_manager();
@@ -13,7 +13,7 @@ The two main function of the manager are:
 - `.allocate_buffer(device_index, bytes)`: Synchronously allocates a new `Buffer` instance and returns it.
 - `.transfer_data(from, to, bytes, callback)`: Asynchronously transfers data from one buffer to another and calls the callback on completion.
 
-These two functions only delegate the call down to `MemoryAllocator`s and `MemoryTransferer`s. The hardware manager also keeps a list of all known allocators and transferers and you can register your own.
+These two functions only delegate the call down to `MemoryAllocator`s and `MemoryTransferer`s. The hardware manager also keeps a list of all known allocators and transferers and we can register our own.
 
 
 ## Buffer
@@ -30,7 +30,7 @@ The `Buffer` instance can exist in two modes:
 1. Created by the `HardwareManager` during new data allocation.
 2. Created by the user using `Buffer::from_existing(device, pointer, size)`.
 
-In the first mode, the `Buffer` instance automatically deallocates the underlying buffer when destroyed. In the second mode it only wraps an existing pointer and it will not attempt to deallocate it. The second mode is meant as an adapter between an external memory management system and the internal memory management of noarr pipelines. You can ask the buffer, whether it is in the second mode using `buffer.wraps_existing_buffer()`.
+In the first mode, the `Buffer` instance automatically deallocates the underlying buffer when destroyed. In the second mode it only wraps an existing pointer and it will not attempt to deallocate it. The second mode is meant as an adapter between an external memory management system and the internal memory management of noarr pipelines. We can ask the buffer, whether it is in the second mode using `buffer.wraps_existing_buffer()`.
 
 This class is the primary component of an envelope.
 
@@ -56,9 +56,9 @@ public:
 };
 ```
 
-As you can see, the allocation interface is very low-level. It works with plain void pointers.
+The code shows, that the allocation interface is very low-level. It works with plain void pointers.
 
-You can register such allocator into the hardware manager like this:
+We can register such allocator into the hardware manager like this:
 
 ```cpp
 manager.set_allocator_for(
@@ -70,7 +70,7 @@ manager.set_allocator_for(
 
 ## Memory transferer
 
-The `MemoryTransferer` class represents the interface, that each specific transferer should implement. A memory transferer instance is meant to transfer from one specific device to another in that one direction. Therefore you need two transferers for each pair of devices to have full coverage. This simplifies the interface, leaving us with only one method:
+The `MemoryTransferer` class represents the interface, that each specific transferer should implement. A memory transferer instance is meant to transfer from one specific device to another in that one direction. Therefore we need two transferers for each pair of devices to have full coverage. This simplifies the interface, leaving us with only one method:
 
 ```cpp
 class MemoryTransferer {
@@ -109,7 +109,7 @@ The first `true/false` argument tells the `CudaTransferer` to transfer to or fro
 
 The hardware manager provides a method `transfer_data_sync` which has similar API to the asynchronous variant and it performs the transfer synchronously. It again delegates the call to a proper `MemoryTransferer` and calls the `transfer_sync` method on it.
 
-This method has a default implementation that simply waits for the asynchronous operation to finish, but you can override it to provide a more suitable implementation.
+This method has a default implementation that simply waits for the asynchronous operation to finish, but we can override it to provide a more suitable implementation.
 
 Synchronous memory transfers are only used in hubs in the `peek_top_chunk` method, if the chunk is not yet present in the requested device. Otherwise hubs transfer data asynchronously to not block the scheduler thread.
 

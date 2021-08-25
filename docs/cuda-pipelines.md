@@ -2,7 +2,7 @@
 
 Noarr pipelines by itself provides only the framework for building pipelines, but does not integrate with any GPGPU framework. The *cuda pipelines* extension integrates it with CUDA.
 
-To use the extension you need to include it and then register it:
+To use the extension, we need to include it and then register it:
 
 ```cpp
 #include <noarr/cuda-pipelines.hpp>
@@ -12,7 +12,7 @@ noarr::pipelines::CudaPipelines::register_extension();
 
 The registration adds memory allocatators and memory transferers for cuda devices into the *hardware manager*. The *hardware manager* is described in more detail in a following section.
 
-With the extension registered, you can now use `Device::DEVICE_INDEX` to represent your primary cuda capable device and also use the `CudaComputeNode`.
+With the extension registered, we can now use `Device::DEVICE_INDEX` to represent our primary cuda capable device and also use the `CudaComputeNode`.
 
 
 ## Cuda compute node
@@ -27,9 +27,9 @@ my_node.advance_cuda([&](cudaStream_t stream){
 });
 ```
 
-You should use this cuda stream for all kernel invocations and other cuda operations. The node is built to synchronize this stream before calling `callback`, so you do not need to write the repetitive synchronization code.
+We should use this cuda stream for all kernel invocations and other cuda operations. The node is built to synchronize this stream before calling `callback`, so we do not need to write the repetitive synchronization code.
 
-The body of the `advance_cuda` also runs in a background thread, just like `advance_async` of an async compute node. In the same way, you can also specify the `advance` method and it will run before `advance_cuda` in the scheduler thread:
+The body of the `advance_cuda` also runs in a background thread, just like `advance_async` of an async compute node. In the same way, we can also specify the `advance` method and it will run before `advance_cuda` in the scheduler thread:
 
 ```cpp
 auto my_node = LambdaCudaComputeNode();
@@ -54,15 +54,15 @@ my_node.advance([&](){
 
 ## Multiple GPUs
 
-If your machine has multiple cuda-capable graphics cards, they are all recognized during the registration of this cuda extension. They are mapped onto device indices 0, 1, 2, 3, ...
+If our machine has multiple cuda-capable graphics cards, they are all recognized during the registration of this cuda extension. They are mapped onto device indices 0, 1, 2, 3, ...
 
-The `Device::DEVICE_INDEX` is the device 0, but to represent other devices you can simply cast an integer to the device index:
+The `Device::DEVICE_INDEX` is the device 0, but to represent other devices we can simply cast an integer to the device index:
 
 ```cpp
 Device::index_t fifth_device_index = (Device::index_t) 4;
 ```
 
-When you define a `CudaComputeNode`, it creates the cuda stream for the device with index 0. You can override this behaviour by specifying a constructor parameter:
+When we define a `CudaComputeNode`, it creates the cuda stream for the device with index 0. We can override this behaviour by specifying a constructor parameter:
 
 ```cpp
 auto my_node = LambdaCudaComputeNode((Device::index_t) 1);

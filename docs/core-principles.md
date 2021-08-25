@@ -27,14 +27,14 @@ When a chunk of data enters a *hub*, it is located on one device (say the host).
 An envelope has five main properties:
 
 - **Buffer pointer**: This pointer points to the buffer containing the data of the envelope. The buffer is typically allocated by the hub, but may also be provided by the user.
-- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But you may choose to use noarr structures here to let the envelope hold arbitrarily complex data. If all the chunks have the same structure (e.g. images with the same resolution), this property might not even be needed, but the chunks are heterogenous, this property is what desribes the structure of the chunk.
+- **Structure**: This value describes the structure of the data in the buffer. If the buffer contains a simple C array, this property is of type `std::size_t` and describes the length of the array. But we may choose to use noarr structures here to let the envelope hold arbitrarily complex data. If all the chunks have the same structure (e.g. images with the same resolution), this property might not even be needed, but the chunks are heterogenous, this property is what desribes the structure of the chunk.
 - **Device index**: This value describes the location of the data (host memory or GPU memory).
 - **Size**: This is the size of the allocated buffer in bytes. This value cannot be changed and is set during the allocation of the envelope. All envelopes in a hub have the same size (the size is more like capacity, the actual data size should be stored in the *structure* property).
 - **Type**: The type of the envelope is the value of two template parameters, the first specifies the type of the *structure* property (e.g. `std::size_t`, `std::array<std::size_t, 2>`) and the second specifies the type of the *buffer pointer* (e.g. `float`, `pixel_t`, `char`, `void`).
 
 Envelope allocation is handled by *hubs*. Envelopes are allocated when a hub is created and they are reused throughout its lifetime (hubs manage a pool of unused envelopes). Envelopes are not shared between hubs and are destroyed with the hub. All envelopes on all devices within one hub are of the same type and the same size and both are specified during the creation of the hub. In certain situations, the user might provide an existing buffer to a hub to wrap it inside an envelope. This is useful for working with memory-mapped files.
 
-The following code shows you how to create a hub with two envelopes on each device, that can hold up to 1024 chars in each envelope:
+The following code shows us, how to create a hub with two envelopes on each device, that can hold up to 1024 chars in each envelope:
 
 ```cpp
 // Create a hub with envelopes with the following properties:
@@ -115,7 +115,7 @@ my_other_node.can_advance([&](){
 
 ## Scheduling
 
-In the code snippets above you learned how to define hubs and compute nodes. The last thing that remains is adding a scheduler and letting it run the pipeline to completion:
+In the code snippets above we learned how to define hubs and compute nodes. The last thing that remains is adding a scheduler and letting it run the pipeline to completion:
 
 ```cpp
 noarr::pipelines::SimpleScheduler scheduler;
@@ -175,7 +175,7 @@ my_other_node.post_advance([&](){
 
 ## Debugging
 
-Since a pipeline is a complicated computational model, it is oftentimes difficult to troubleshoot problems. One of the tools you have at your disposal is the debugging scheduler:
+Since a pipeline is a complicated computational model, it is oftentimes difficult to troubleshoot problems. One of the tools we have at our disposal is the debugging scheduler:
 
 ```cpp
 auto scheduler = noarr::pipelines::DebuggingScheduler(std::cout);
@@ -213,15 +213,15 @@ void noarr::pipelines::DebuggingScheduler::run() {
 }
 ```
 
-If you provide an output stream to the scheduler constructor, it will log many interesting events to it. Going through the log may help you diagnose problems quicker, than by using a traditional debugger.
+If we provide an output stream to the scheduler constructor, it will log many interesting events to it. Going through the log may help us diagnose problems quicker, than by using a traditional debugger.
 
-Each pipeline node has a label that is used in the log. You can set a label for a compute node during construction:
+Each pipeline node has a label that is used in the log. We can set a label for a compute node during construction:
 
 ```cpp
 auto my_node = LambdaComputeNode("my_node");
 ```
 
-Sometimes you would also like to see, what is happening inside a hub (how is the data transferred). You can do this by enabling logging for the hub in a similar way to the scheduler:
+Sometimes we would also like to see, what is happening inside a hub (how is the data transferred). We can do this by enabling logging for the hub in a similar way to the scheduler:
 
 ```cpp
 my_hub.start_logging(std::cout);
