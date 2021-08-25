@@ -60,18 +60,18 @@ private:
      * List of all envelopes in this hub
      * (for memory management)
      */
-    std::vector<std::unique_ptr<Envelope_t>> envelopes;
+    std::deque<Envelope_t> envelopes;
 
     /**
      * List of all chunks in this hub
      * (for memory management)
      */
-    std::vector<std::unique_ptr<Chunk_t>> chunks;
+    std::deque<Chunk_t> chunks;
 
     /**
      * List of all links this hub hosts
      */
-    std::vector<std::unique_ptr<Link_t>> links;
+    std::deque<Link_t> links;
 
     /**
      * Empty envelopes, available to be used
@@ -130,13 +130,11 @@ public:
     void allocate_envelope(Device::index_t device_index) {
         guard_scheduler_thread();
 
-        envelopes.push_back(
-            std::make_unique<Envelope_t>(
-                hardware_manager.allocate_buffer(device_index, buffer_size)
-            )
+        auto& new_envelope = envelopes.emplace_back(
+            hardware_manager.allocate_buffer(device_index, buffer_size)
         );
         
-        empty_envelopes[device_index].push_back(&*envelopes.back());
+        empty_envelopes[device_index].push_back(&new_envelope);
 
         say("Allocated new envelope on device: " + std::to_string(device_index));
     }
@@ -260,9 +258,7 @@ public:
 
         bool found_a_link = false;
 
-        for (std::unique_ptr<Link_t>& link_ptr : links) {
-            Link_t& link = *link_ptr;
-
+        for (Link_t& link : links) {
             // if we have a non-producing link
             if (link.type == LinkType::consuming
                 || link.type == LinkType::modifying
@@ -307,8 +303,8 @@ public:
         Envelope_t& envelope = *empty_envelopes[from_device].back();
         empty_envelopes[from_device].pop_back();
         
-        chunks.push_back(std::make_unique<Chunk_t>(envelope, from_device));
-        chunk_queue.push_back(&*chunks.back());
+        auto& new_chunk = chunks.emplace_back(envelope, from_device);
+        chunk_queue.push_back(&new_chunk);
 
         return envelope;
     }
@@ -364,8 +360,8 @@ public:
         Chunk_t& top_chunk = *chunk_queue.front();
 
         // transfer its envelopes into trash
-        for (auto const& x : top_chunk.envelopes) {
-            trashed_envelopes.push_back(x.second);
+        for (auto&& [_, envelope] : top_chunk.envelopes) {
+            trashed_envelopes.push_back(envelope);
         }
 
         // remove the chunk from the queue
@@ -504,9 +500,7 @@ private:
      */
     bool is_envelope_hosted_in_a_link(Envelope_t& envelope) {
         // go over all links
-        for (std::unique_ptr<Link_t>& link_ptr : links) {
-            Link_t& link = *link_ptr;
-
+        for (Link_t &link : links) {
             if (link.envelope == &envelope)
                 return true; // yes, it is hosted here
         }
@@ -525,9 +519,7 @@ private:
         }
         
         // go over all producing links
-        for (std::unique_ptr<Link_t>& link_ptr : links) {
-            Link_t& link = *link_ptr;
-
+        for (Link_t &link : links) {
             // go over producing links only
             if (link.type != LinkType::producing)
                 continue;
@@ -568,8 +560,8 @@ private:
         // the production did happen, the envelope in the link is full of data
         if (link.was_committed) {
             // create a new chunk and push it into the queue
-            chunks.push_back(std::make_unique<Chunk_t>(*link.envelope, link.device_index));
-            chunk_queue.push_back(&*chunks.back());
+            auto& new_chunk = chunks.emplace_back(*link.envelope, link.device_index);
+            chunk_queue.push_back(&new_chunk);
             
             say("New chunk produced by: " + link.guest_node->label);
         }
@@ -645,10 +637,10 @@ private:
             // the chunk was modified
             if (link.type == LinkType::modifying) {
                 // trash all envelopes except the one that was modified
-                for (auto const& x : top_chunk.envelopes) {
-                    if (x.first == link.device_index)
+                for (auto&& [index, envelope] : top_chunk.envelopes) {
+                    if (index == link.device_index)
                         continue; // do not trash the modified envelope
-                    trashed_envelopes.push_back(x.second);
+                    trashed_envelopes.push_back(envelope);
                 }
 
                 // rebuild the envelope set for the chunk
@@ -811,13 +803,12 @@ public:
      * Creates a new link for which this hub is the host
      */
     Link_t& create_link(LinkType type, Device::index_t device_index, bool autocommit) {
-        links.push_back(std::make_unique<Link_t>(
+        return links.emplace_back(
             this,
             type,
             device_index,
             autocommit
-        ));
-        return *links.back();
+        );
     }
 
     /**
@@ -827,9 +818,7 @@ public:
     Link_t& resolve_link_from_node(Node& node) {
         Link_t* resolved_link_ptr = nullptr;
         
-        for (std::unique_ptr<Link_t>& link_ptr : links) {
-            Link_t& link = *link_ptr;
-
+        for (Link_t& link : links) {
             // skip links pointing to different nodes
             if (link.guest_node != &node)
                 continue;
