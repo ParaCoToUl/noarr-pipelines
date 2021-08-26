@@ -11,6 +11,7 @@
 #include <noarr/pipelines.hpp>
 #include <noarr/structures_extended.hpp>
 
+// typedef for the matrix structures and the value type stored in them
 using value_type = std::uint32_t;
 using MatrixStructureRows = noarr::vector<'m', noarr::vector<'n', noarr::scalar<value_type>>>;
 using MatrixStructureColumns = noarr::vector<'n', noarr::vector<'m', noarr::scalar<value_type>>>;
@@ -23,15 +24,10 @@ namespace {
 constexpr std::size_t BLOCK_SIZE = 32;
 
 /**
- * @brief Takes 2 noarr matrices and multiplyes them.
- *
- * @tparam matrix1: First noarr matrix
- * @tparam matrix2: Second noarr matrix
- * @tparam structure: Structure defining structure to be used by result noarr matrix
- * @return Matrix noarr matrix created from source noarr matrices
+ * @brief bottom case for the matrix multiplication, calls the kernel
  */
 template<typename Matrix1, typename Matrix2, typename MatrixResult>
-void matrix_multiply_impl(const Matrix1 matrix1, const Matrix2 matrix2, MatrixResult result)
+void matrix_multiply_impl(const Matrix1 &matrix1, const Matrix2 &matrix2, MatrixResult result)
 {
 	std::size_t height1 = matrix1.template get_length<'m'>();
 	std::size_t width1 = matrix1.template get_length<'n'>();
@@ -39,7 +35,10 @@ void matrix_multiply_impl(const Matrix1 matrix1, const Matrix2 matrix2, MatrixRe
 	std::size_t width2 = matrix2.template get_length<'n'>();
 
 	assert(width1 == height2);
-		
+	
+
+	// dummy kernel begin
+
 	for (std::size_t i = 0; i < width2; i++)
 	{
 		for (std::size_t j = 0; j < height1; j++)
@@ -57,8 +56,13 @@ void matrix_multiply_impl(const Matrix1 matrix1, const Matrix2 matrix2, MatrixRe
 			result.template at<'n', 'm'>(i, j) = sum;
 		}
 	}
+
+	// dummy kernel end
 }
 
+/**
+ * @brief this overload transforms arrays for the result matrix into a matrix and then calls the bottom case
+ */
 template<typename Matrix1, typename Matrix2>
 void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2 &matrix2, char *data_results, const char *layout_results)
 {
@@ -78,6 +82,9 @@ void matrix_multiply_impl(const Matrix1& matrix1, const Matrix2 &matrix2, char *
 	}
 }
 
+/**
+ * @brief this overload transforms arrays for the second matrix into a matrix and then propagates the process further
+ */
 template<typename Matrix1>
 void matrix_multiply_impl(
 	const Matrix1& matrix1,
@@ -97,6 +104,9 @@ void matrix_multiply_impl(
 	}
 }
 
+/**
+ * @brief this overload transforms arrays for the first matrix into a matrix and then propagates the process further
+ */
 void matrix_multiply(
 	const int height1, const int width1, const char *data1, const char *layout1,
 	const int height2, const int width2, const char *data2, const char *layout2,
@@ -191,7 +201,7 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 
 	int finished = 0;
 
-	// the reader wants to access the reder_hub data
+	// the reader wants to access the reader_hub data
 	// and it wants to produce new chunks of data,
 	auto& reader_link = reader.link(reader_hub.to_produce(
 		Device::HOST_INDEX
@@ -218,14 +228,14 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 		reader.callback();
 	});
 
-	// Define the capitalizer
+	// Define the multiplicator
 	// ----------------------
 
 	// the multiplicator wants to access both hubs,
 	// consuming chunks from one and producing chunks into the other
 	//
-	// it also pretends to be a gpu kernel, so it wants the data to be located
-	// on the gpu device
+	// it also pretends to call a gpu kernel, so it wants the data to be located
+	// on the dummy gpu device
 	auto& multiplicator_input_link = multiplicator.link(
 		reader_hub.to_consume(Device::DUMMY_GPU_INDEX)
 	);
@@ -244,9 +254,10 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 	std::size_t output_width;
 
 	multiplicator.advance([&](){
-		// TLDR: Transfer the data from the envelope in the input link
-		// to the envelope in the output link and capitalize the string.
+		// TL;DR: multiplies accumulator matrix with the input matrix from their respective envelopes
+		// and stores the result matrix into the output envelope and accumulator envelope
 
+		// useful shortcuts
 		auto* in = multiplicator_input_link.envelope;
 		auto* out = multiplicator_output_link.envelope;
 		auto* accu = multiplicator_accumulator_link.envelope;
@@ -255,12 +266,16 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 
 
 		if (finished == 0) {
-			out->structure = size;
-			memcpy(out->buffer, in->buffer, size);
+			// first iteration, we just copy the read matrix into the output matrix
+
+			std::memcpy(out->buffer, in->buffer, size);
 
 			output_height = heights[0];
 			output_width = widths[0];
 		} else {
+			// here we call the multiplication implementation,
+			// multiplying accumulator and input into output
+
 			matrix_multiply(
 				output_height, output_width, accu->buffer, "rows",
 				heights[finished], widths[finished], in->buffer, "rows",
@@ -268,9 +283,11 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 
 			output_width = widths[finished];
 		}
-			
+
+		// here we set output structure (size) and copy it to accumulator
 		out->structure = output_width * output_height * sizeof(value_type);
-		memcpy(accu->buffer, out->buffer, size);
+		accu->structure = out->structure;
+		std::memcpy(accu->buffer, out->buffer, size);
 
 		// NOTE: we do not need to commit now,
 		// as both links have autocommit enabled
@@ -289,8 +306,7 @@ void matrix_multiply_demo(int *n_matrices, char **matrices, int *heights, int *w
 	auto& writer_link = writer.link(writer_hub.to_consume(Device::HOST_INDEX));
 
 	writer.advance([&](){
-		// TL;DR: Transfer the line of text from the given chunk
-		// to the standard output.
+		// TL;DR: prints the contents of the output matrix
 
 		if (finished == *n_matrices)
 			matrix_print(output_height, output_width, writer_link.envelope->buffer, "rows");
