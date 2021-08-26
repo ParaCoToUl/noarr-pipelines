@@ -185,12 +185,12 @@ The diagram excludes the `Lambda-` prefixed variants since they simply inherit f
 
 This section describes how we could make our own extended compute node, like the `AsyncComputeNode` or the `CudaComputeNode`.
 
-First, we need to diferentiate between two users of a compute node:
+First, we need to differentiate between two users of a compute node:
 
-- **End-user**: This is what we have been doing so far. We defined custom compute nodes via lambda expressions or inheritance, but we have overriden only event methods that were designed to be overriden in this way.
+- **End-user**: This is what we have been doing so far. We defined custom compute nodes via lambda expressions or inheritance, but we have overridden only the event methods that were designed to be overridden in this way.
 - **Extending-user**: This is what we want now. We want to add custom event methods, modify the way existing event methods are called, or add additional fields and utility methods. We want our product to be used by the end-user.
 
-Extending the `Node` class is mostly the same as extending any other class, but there a few design decisions that make it non-obvious how to change the behaviour of event methods.
+Extending the `Node` class is mostly the same as extending any other class, but there a few design decisions that make it non-obvious how to change the behavior of event methods.
 
 Say we are extending the `ComputeNode` and we want to have a piece of code be executed before the `advance` method is called. We would typically do something like this:
 
