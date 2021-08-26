@@ -8,7 +8,7 @@
 
 # Noarr Pipelines
 
-Noarr pipelines is a header-only library, designed for building computational pipelines for GPGPU computing. A pipeline, compared to other computational models, has the advantage of being easily parallelizable among its nodes. In addition, Noarr pipelines aim to be lightweight, extensible and low-level, to be useful for parallel computation research. Our pipelines can take form of any generic graph, with nodes arbitrarily connected. Each node is periodically executed, to perform a specific part of the overall computation.
+Noarr pipelines is a header-only library, designed for building computational pipelines for GPGPU computing. A pipeline, compared to other computational models, has the advantage of being easily parallelizable among its nodes. In addition, Noarr pipelines aim to be lightweight, extensible, and low-level, to be useful for parallel computation research. Our pipelines can take the form of any generic graph, with nodes arbitrarily connected. Each node is periodically executed, to perform a specific part of the overall computation.
 
 
 ## Using the library
@@ -30,7 +30,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(<my-app> PRIVATE Threads::Threads)
 ```
 
-> **Note:** You can use the `ExternalProject_Add` cmake command to automatically clone our repository. The `examples/kmeans/CMakeLists.txt` file uses it to include the Noarr structures repository.
+> **Note:** You can use the `ExternalProject_Add` CMake command to automatically clone our repository. The `examples/kmeans/CMakeLists.txt` file uses it to include the Noarr structures repository.
 
 
 ## Documentation
@@ -48,7 +48,7 @@ The [examples folder](examples) contains two examples that demonstrate the usage
 
 ## Bindings
 
-The [bindings folder](bindings) contains an example project that is experted as a binding to both the R language and the Python language. You can duplicate this folder and modify its contents to package your own GPGPU algorithm.
+The [bindings folder](bindings) contains an example project that is exported as a binding to both the R language and the Python language. You can duplicate this folder and modify its contents to package your GPGPU algorithm.
 
 
 ## Running tests
