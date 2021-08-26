@@ -16,7 +16,7 @@ FetchContent_MakeAvailable(Catch2)
 # use threading library
 find_package(Threads REQUIRED)
 
-# use cuda library
+# use CUDA library
 find_package(CUDA 9.0 REQUIRED)
 
 # setup the test runner executable
@@ -34,7 +34,7 @@ target_link_libraries(test-runner PRIVATE ${CUDA_LIBRARIES})
 # https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#using-separate-compilation-in-cuda
 set_target_properties(test-runner PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
-# cuda architecture to compile against
+# CUDA architecture to compile against
 set_target_properties(test-runner PROPERTIES CUDA_ARCHITECTURES "35;50;72")
 
 # make nvcc use C++ 14

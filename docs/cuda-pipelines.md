@@ -89,6 +89,6 @@ NOARR_CUCH(cudaGetLastError());
 // check for errors during allocations
 NOARR_CUCH(cudaMalloc(&buffer, size));
 
-// check for errors when synchronizing cuda streams
+// check for errors when synchronizing CUDA streams
 NOARR_CUCH(cudaStreamSynchronize(stream));
 ```

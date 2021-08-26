@@ -17,22 +17,22 @@ namespace noarr {
 namespace pipelines {
 
 /**
- * Compute node that has its own cuda stream
+ * Compute node that has its own CUDA stream
  */
 class CudaComputeNode : public AsyncComputeNode {
 public:
     /**
-     * Noarr device index for the cuda device of the stream
+     * Noarr device index for the CUDA device of the stream
      */
     Device::index_t device_index;
     
     /**
-     * Index of the cuda device that the stream belongs to
+     * Index of the CUDA device that the stream belongs to
      */
     int cuda_device;
     
     /**
-     * The cuda stream to be used for kernel invocations.
+     * The CUDA stream to be used for kernel invocations.
      * This compute node automatically synchronizes this stream
      * at the end of advance_cuda.
      */

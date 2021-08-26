@@ -31,7 +31,7 @@ cmake --build . --target uppercase
 
 # IF YOU HAVE CUDA AVAILABLE:
 
-# also build the cuda target
+# also build the CUDA target
 cmake --build . --target uppercase-cuda
 
 # run the compiled example on the input file

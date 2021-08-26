@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
 
         // NOTE: we do not need to call the callback,
         // as the CudaComputeNode does that automatically
-        // when the provided cuda stream becomes empty
+        // when the provided CUDA stream becomes empty
     });
 
 

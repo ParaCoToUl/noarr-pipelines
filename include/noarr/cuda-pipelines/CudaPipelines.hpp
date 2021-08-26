@@ -23,14 +23,14 @@ private:
 
 public:
     /**
-     * Converts cuda device number to noarr device index
+     * Converts CUDA device number to noarr device index
      */
     static Device::index_t cuda_device_to_device_index(int cuda_device) {
         return (Device::index_t) cuda_device;
     }
 
     /**
-     * Converts noarr device index to cuda device nuber
+     * Converts noarr device index to CUDA device number
      */
     static int device_index_to_cuda_device(Device::index_t device_index) {
         return (int) device_index;
@@ -51,7 +51,7 @@ public:
         NOARR_CUCH(cudaGetDeviceCount(&cuda_devices));
         assert(cuda_devices > 0 && "There are no cuda-capable devices available.");
 
-        // register individual cuda devices
+        // register individual CUDA devices
         for (int cuda_device = 0; cuda_device < cuda_devices; ++cuda_device) {
             register_gpu(
                 manager,

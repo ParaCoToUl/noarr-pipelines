@@ -14,8 +14,8 @@ namespace pipelines {
 /**
  * Can allocate and free memory on a CUDA capable device
  * 
- * uploading = to the cuda device
- * downloading = from the cuda device
+ * uploading = to the CUDA device
+ * downloading = from the CUDA device
  */
 class CudaTransferer : public MemoryTransferer {
 private:
@@ -33,7 +33,7 @@ public:
         std::size_t bytes,
         std::function<void()> callback
     ) const override {
-        // NOTE: custom thread and custom cuda stream to not block anything else
+        // NOTE: custom thread and custom CUDA stream to not block anything else
         std::thread t([this, from, to, bytes, callback](){
             // use the proper device
             NOARR_CUCH(cudaSetDevice(cuda_device));
