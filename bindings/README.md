@@ -1,6 +1,6 @@
 # Bindings to R and Python
 
-This folder gives an example how to create bindings to R and Python with a code containing noarr-structures and noarr-pipelines.
+This folder gives an example of how to create bindings to R and Python with a code containing noarr-structures and noarr-pipelines.
 
 This allows us to accelerate algorithms written in R and Python with C++ and CUDA (which then helps us to efficiently utilize both CPU and GPU processing power).
 
@@ -45,7 +45,7 @@ The steps will be explained in detail in the following two sections (all example
     - `-o <LIBRARY_NAME>` specifies the name of the outputted file (in this case library)
         - in Linux, the file extension should be `.so`
         - in Windows, the file extension should be `.dll`
-    - `<SOURCE(S)>` is a list of source files the library consist of
+    - `<SOURCE(S)>` is a list of source files the library consists of
 
     For extra information, read the [NVCC](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#nvcc-command-options) documentation
 
@@ -87,7 +87,7 @@ For more information, type `?.C` to an R console.
 
 ### Python
 
-For Python we will use the standard *[ctypes](https://docs.Python.org/3/library/ctypes.html)* library. So make sure it is imported in your Python code:
+For Python, we will use the standard *[ctypes](https://docs.Python.org/3/library/ctypes.html)* library. So make sure it is imported in your Python code:
 
 ```Python
 from ctypes import *
@@ -130,7 +130,7 @@ matrix_multiply.matrix_multiply_demo(n_matrices, matrices, heights, widths)
 >                           int *heights, int *widths)
 > ```
 
-Note that we use arrays just because R does not support non-array types and we use the same C code for both languages, Python can actually pass scalar values (and even structures/unions).
+Note that we use arrays just because R does not support non-array types and we use the same C code for both languages, Python can pass even scalar values (and structures/unions).
 
 For more information, see the [ctypes](https://docs.Python.org/3/library/ctypes.html) documentation.
 
