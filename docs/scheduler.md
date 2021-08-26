@@ -1,6 +1,6 @@
 # Scheduler
 
-Scheduler is the component that makes the whole pipeline run. In the introduction we showed how to use a scheduler to run a pipeline. This section will go over the same concepts in more detail.
+The scheduler is the component that makes the whole pipeline run. In the introduction, we showed how to use a scheduler to run a pipeline. This section will go over the same concepts in more detail.
 
 To recap, this is the code to run a pipeline:
 
@@ -27,20 +27,20 @@ The external API of a scheduler is very simple:
 - the `add` method
 - the `run` method
 
-When writing our own scheduler, we can use the constructor to pass in any parameters we need. This is nothing unusal, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log to.
+When writing our own scheduler, we can use the constructor to pass in any parameters we need. This is nothing unusual, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log into.
 
-The `add` method accepts a `Node&` reference and remembers it internally to use it during scheduling. The order in which a user registers nodes has only impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers parallelize the execution and the order becomes non-deterministic.
+The `add` method accepts a `Node&` reference and remembers it internally to use during scheduling. The order in which a user registers nodes has only an impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have an impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers parallelize the execution and the order becomes non-deterministic.
 
-The `run` method blocks, and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If we incorrectly setup our `can_advance` conditions (or we do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly setup pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so cannot detect this situation.
+The `run` method blocks and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If we incorrectly set up our `can_advance` conditions (or we do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly set up pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so it cannot detect this situation.
 
-It is advisable that we run our pipeline only once. If we want to run it multiple times, it is better to destroy the pipeline and create a new one. The reason being that a terminated pipeline might be in a different state than the initial state before the exection. Therefore running it a second time might cause unexpected issues. That being said, there is nothing preventing us from calling `run` multiple times. If we make sure our hubs are in the right state after termination and our own added logic is also consistent, we can easily reuse the pipeline. We would save time on envelope allocation.
+It is advisable that we run our pipeline only once. If we want to run it multiple times, it is better to destroy the pipeline and create a new one. The reason being that a terminated pipeline might be in a different state than the initial state before the execution. Therefore running it a second time might cause unexpected issues. That being said, there is nothing preventing us from calling `run` multiple times. If we make sure our hubs are in the right state after termination and our own added logic are also consistent, we can easily reuse the pipeline. We would save time on envelope allocation.
 
 The `add` and `run` methods are part of the base class `Scheduler` that handles the node registration.
 
 
 ## Internal API
 
-By internal API we mean the methods of a `Node` that are called by the scheduler, and the scheduling behaviour.
+By internal API we mean the methods of a `Node` that are called by the scheduler, and the scheduling behavior.
 
 The `Node` class exposes four methods that are called by a scheduler:
 
@@ -160,7 +160,7 @@ auto my_node = LambdaComputeNode("my_node");
 
 Internally, the `DebuggingScheduler` uses an instance of the `SchedulerLogger` class to encapsulate the logging logic.
 
-Just a classical program debugger can be stepped, the `DebuggingScheduler` can also be stepped. One step is considered to be the one attempt at advancing a node. This is how we would let the scheduler do fity steps and then leave the pipeline as is:
+Just a classical program debugger can be stepped, the `DebuggingScheduler` can also be stepped. One step is considered to be the one attempt at advancing a node. This is how we would let the scheduler do fifty steps and then leave the pipeline as-is:
 
 ```cpp
 DebuggingScheduler scheduler;
@@ -172,7 +172,7 @@ for (std::size_t i = 0; i < 50; ++i) {
 }
 ```
 
-The pipeline initialization is performed automatically, but can also be performed manually. The following code initializes the pipeline manually, but behaves in the exact same way as the previous example (previously, the initialization was performed just before the first scheduler step):
+The pipeline initialization is performed automatically, but can also be performed manually. The following code initializes the pipeline manually, but behaves in the same way as the previous example (previously, the initialization was performed just before the first scheduler step):
 
 ```cpp
 DebuggingScheduler scheduler;
@@ -186,7 +186,7 @@ for (std::size_t i = 0; i < 50; ++i) {
 }
 ```
 
-Similarly, the pipeline termination will be automatically detected and performed after the last step, that detects the stopping condition. Calling `update_next_node` after that will cause an error.
+Similarly, the pipeline termination will be automatically detected and performed after the last step, which detects the stopping condition. Calling `update_next_node` after that will cause an error.
 
 We can use this feature to run the pipeline to a point, where a certain global variable changes to a required value:
 
@@ -214,7 +214,7 @@ scheduler.run();
 
 ## Simple scheduler
 
-The `SimpleScheduler` is currently the default scheduler one would use in a pipeline. It also advances nodes in generations, like the `DebuggingScheduler`, but each generation runs all the nodes in parallel. At the end of each generation is a synchronization barrier and stopping condition detection. This algorithm is not optimal, but is good-enough in most cases. A proper, fully parallel scheduler could be implemented in the future.
+The `SimpleScheduler` is currently the default scheduler one would use in a pipeline. It also advances nodes in generations, like the `DebuggingScheduler`, but each generation runs all the nodes in parallel. At the end of each generation is a synchronization barrier and stopping condition detection. This algorithm is not optimal but is good enough in most cases. A proper, fully parallel scheduler could be implemented in the future.
 
 The algorithm for this scheduler is described by this code:
 
