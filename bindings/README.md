@@ -124,8 +124,7 @@ for i in range(repetitions):
     widths[i] = size
 
 # we pass the 4 arrays as arguments to the C code
-matrix_multiply.matrix_multiply_demo(n_matrices, matrices,
-                                     heights, widths)
+matrix_multiply.matrix_multiply_demo(n_matrices, matrices, heights, widths)
 ```
 
 > This makes a call to the function with the following header (the types have to match, for that see the documentation, otherwise an undefined behavior happens):
