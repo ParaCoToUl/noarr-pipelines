@@ -59,7 +59,7 @@ my_node.advance_async([&](){
 });
 ```
 
-Noarr pipelines also provides an extension that gives us some helper functions for working with noarr structures via bags:
+Noarr pipelines also provide an extension that gives us some helper functions for working with noarr structures via bags:
 
 ```cpp
 // include the extension
