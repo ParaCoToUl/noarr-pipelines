@@ -1,6 +1,6 @@
-# Structures in pipelines
+# Noarr Structures in pipelines
 
-Although noarr pipelines is written as a standalone library, it is also designed to work well with noarr structures. Structures are meant to be used for data inside hubs and envelopes.
+Although noarr pipelines is written as a standalone library, it is also designed to work well with Noarr Structures. Structures are meant to be used for data inside hubs and envelopes.
 
 Here is an example of how to use structures in a hub. Since the structure type is rather complicated, we will use the `using` directive to give it an explicit name:
 
