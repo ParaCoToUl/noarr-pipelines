@@ -166,23 +166,23 @@ For windows, there is an extra requirement of having installed [Visual Studio](h
 
 ### How to run the R script
 
-#### **On Linux**
+- **On Linux**
 
-In a shell, run:
+    In a shell, run:
 
-```sh
-./matrix_multiply.R
-```
+    ```sh
+    ./matrix_multiply.R
+    ```
 
-or:
+    or:
 
-```sh
-Rscript matrix_multiply.R
-```
+    ```sh
+    Rscript matrix_multiply.R
+    ```
 
-#### **On Windows**
+- **On Windows**
 
-Run the file `matrix_multiply.R` in R.
+    Run the file `matrix_multiply.R` in R.
 
 #### **Through R (regardless of environment)**
 
@@ -194,27 +194,27 @@ source("matrix_multiply.R")
 
 ### How to run the Python demonstration
 
-#### **On Linux**
+- **On Linux**
 
-In a shell, run:
+    In a shell, run:
 
-```sh
-./matrix_multiply.py
-```
+    ```sh
+    ./matrix_multiply.py
+    ```
 
-or:
+    or:
 
-```sh
-Python matrix_multiply.py
-```
+    ```sh
+    Python matrix_multiply.py
+    ```
 
-#### **On Windows**
+- **On Windows**
 
-In powershell/cmd, run:
+    In powershell/cmd, run:
 
-```ps1
-Python.exe matrix_multiply.py
-```
+    ```ps1
+    Python.exe matrix_multiply.py
+    ```
 
 ### Expected output
 
