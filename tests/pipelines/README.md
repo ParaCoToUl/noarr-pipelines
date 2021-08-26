@@ -5,7 +5,7 @@ To see the individual tests, open the [`tests` folder](tests).
 
 ## Running tests
 
-In the terminal (linux bash, windows cygwin or gitbash) run the following commands:
+In the terminal (Linux bash, Windows Cygwin, or Gitbash), run the following commands:
 
 ```sh
 # create and enter the folder that will contain the build files
