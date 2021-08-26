@@ -107,10 +107,15 @@ After the library has been loaded we make calls to the C functions as if they we
 
 ```Python
 # this syntax creates 4 arrays (3 integer arrays and 1 c-string array)
-n_matrices = (c_int * 1)(repetitions) # integer array of length `1`, initialized to `repetitions`
-matrices = (c_char_p * repetitions)() # c-string array of length `repetitions`
-heights = (c_int * repetitions)() # integer array of length `repetitions`
-widths = (c_int * repetitions)() # integer array of length `repetitions`
+
+# integer array of length `1`, initialized to `repetitions`
+n_matrices = (c_int * 1)(repetitions)
+# c-string array of length `repetitions`
+matrices = (c_char_p * repetitions)()
+# integer array of length `repetitions`
+heights = (c_int * repetitions)()
+# integer array of length `repetitions`
+widths = (c_int * repetitions)()
 
 # here we initialize the arrays
 for i in range(repetitions):
@@ -119,7 +124,8 @@ for i in range(repetitions):
     widths[i] = size
 
 # we pass the 4 arrays as arguments to the C code
-matrix_multiply.matrix_multiply_demo(n_matrices, matrices, heights, widths)
+matrix_multiply.matrix_multiply_demo(n_matrices, matrices,
+                                     heights, widths)
 ```
 
 > This makes a call to the function with the following header (the types have to match, for that see the documentation, otherwise an undefined behavior happens):
