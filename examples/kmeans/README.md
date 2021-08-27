@@ -23,7 +23,8 @@ mkdir build
 cd build
 
 # create build files
-# (build for release to enable optimizations - important for speed of noarr structures)
+# (build for release to enable optimizations
+# - important for speed of noarr structures)
 cmake -D CMAKE_BUILD_TYPE=Release ..
 
 # build the project using build files
