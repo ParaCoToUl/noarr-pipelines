@@ -81,11 +81,11 @@ TEST_CASE("Producer filter consumer example", "[prod_fil_con][hub]") {
     }
 
     SimpleScheduler scheduler;
-    scheduler.add(hub_A);
-    scheduler.add(hub_B);
-    scheduler.add(producer);
-    scheduler.add(filter);
-    scheduler.add(consumer);
+    scheduler << hub_A
+              << hub_B
+              << producer
+              << filter
+              << consumer;
 
     scheduler.run();
 

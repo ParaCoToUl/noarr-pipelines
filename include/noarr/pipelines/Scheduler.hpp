@@ -36,6 +36,12 @@ public:
         this->nodes.push_back(&node);
     }
 
+    Scheduler& operator<<(Node& node) {
+        add(node);
+
+        return *this;
+    }
+
     ///////////////////
     // Execution API //
     ///////////////////

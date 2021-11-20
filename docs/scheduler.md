@@ -9,10 +9,10 @@ To recap, this is the code to run a pipeline:
 noarr::pipelines::SimpleScheduler scheduler;
 
 // register all pipeline nodes
-scheduler.add(my_hub);
-scheduler.add(my_node);
-scheduler.add(my_other_hub);
-scheduler.add(my_other_node);
+scheduler << my_hub
+          << my_node
+          << my_other_hub
+          << my_other_node;
 
 // run the pipeline to completion
 scheduler.run();
@@ -25,11 +25,26 @@ The external API of a scheduler is very simple:
 
 - the constructor
 - the `add` method
+- `operator<<`, a left-associative alias for the `add` method
 - the `run` method
 
 When writing our own scheduler, we can use the constructor to pass in any parameters we need. This is nothing unusual, the `DebuggingScheduler`, for example, optionally accepts an output stream to print a log into.
 
 The `add` method accepts a `Node&` reference and remembers it internally to use during scheduling. The order in which a user registers nodes has only an impact on the order in which `initialize` and `terminate` event methods are called on nodes. The first-registered nodes have their event methods executed first. It may or may not have an impact on the scheduling algorithm and the user should not rely on it. The `DebuggingScheduler` does use the order for ordering nodes in one scheduling generation, but other schedulers parallelize the execution and the order becomes non-deterministic.
+
+Multiple uses of the `add` method can be chained together by using the `<<` operator:
+
+```cpp
+scheduler.add(first_node);
+scheduler.add(second_node);
+scheduler.add(third_node);
+```
+
+is equivalent to:
+
+```cpp
+scheduler << first_node << second_node << third_node;
+```
 
 The `run` method blocks and executes the pipeline to completion. The stopping condition is that all nodes are *idle* and all return `false` from their `can_advance` method. If we incorrectly set up our `can_advance` conditions (or we do not provide the correct number of envelopes in hubs), the pipeline usually enters the stopping condition without having computed anything interesting. The scheduler has no way of detecting this issue. It may also happen that an incorrectly set up pipeline will run indefinitely. Again, the scheduler cannot have an upper limit on the invocation count and so it cannot detect this situation.
 
@@ -164,8 +179,7 @@ Just a classical program debugger can be stepped, the `DebuggingScheduler` can a
 
 ```cpp
 DebuggingScheduler scheduler;
-scheduler.add(my_hub);
-scheduler.add(my_node);
+scheduler.add(my_hub, my_node);
 
 for (std::size_t i = 0; i < 50; ++i) {
     scheduler.update_next_node();
@@ -176,8 +190,7 @@ The pipeline initialization is performed automatically, but can also be performe
 
 ```cpp
 DebuggingScheduler scheduler;
-scheduler.add(my_hub);
-scheduler.add(my_node);
+scheduler.add(my_hub, my_node);
 
 scheduler.initialize_pipeline();
 
@@ -196,8 +209,7 @@ bool my_flag = false; // some global variable
 // ... rest of the pipeline ...
 
 DebuggingScheduler scheduler;
-scheduler.add(my_hub);
-scheduler.add(my_node);
+scheduler.add(my_hub, my_node);
 
 // step the scheduler until the global variable changes value
 while (!my_flag) {

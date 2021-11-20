@@ -57,8 +57,7 @@ TEST_CASE("Given buffer", "[buffer][hub]") {
 
     // run the compute node
     DebuggingScheduler scheduler;
-    scheduler.add(my_hub);
-    scheduler.add(my_node);
+    scheduler << my_hub << my_node;
     scheduler.run();
 
     // check that the compute node ran

@@ -78,10 +78,10 @@ TEST_CASE("Producer modifier consumer example", "[prod_mod_con][hub]") {
     item_hub.flow_data_to(modifier);
 
     SimpleScheduler scheduler;
-    scheduler.add(item_hub);
-    scheduler.add(producer);
-    scheduler.add(modifier);
-    scheduler.add(consumer);
+    scheduler << item_hub
+              << producer
+              << modifier
+              << consumer;
 
     scheduler.run();
 
