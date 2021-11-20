@@ -58,9 +58,7 @@ TEST_CASE("Cuda compute node", "[cuda_compute_node]") {
     }
 
     SimpleScheduler scheduler;
-    scheduler.add(hub);
-    scheduler.add(modifier);
-    scheduler.add(consumer);
+    scheduler << hub << modifier << consumer;
     scheduler.run();
 
     REQUIRE(items.size() == expected_items.size());

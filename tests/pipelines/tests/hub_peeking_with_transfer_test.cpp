@@ -66,7 +66,6 @@ TEST_CASE("Hub peeking with transfer", "[memory_transfer][hub]") {
     }
 
     DebuggingScheduler scheduler;
-    scheduler.add(node);
-    scheduler.add(hub);
+    scheduler << node << hub;
     scheduler.run();
 }

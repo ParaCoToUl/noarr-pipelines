@@ -220,11 +220,11 @@ int main(int argc, char* argv[]) {
     // let themselves be advanced (have all links ready and
     // can_advance returns true)
     SimpleScheduler scheduler;
-    scheduler.add(reader);
-    scheduler.add(capitalizer);
-    scheduler.add(writer);
-    scheduler.add(reader_hub); // hubs are also pipeline nodes,
-    scheduler.add(writer_hub); // they just serve data management
+    scheduler << reader
+              << capitalizer
+              << writer
+              << reader_hub // hubs are also pipeline nodes,
+              << writer_hub; // they just serve data management
 
     scheduler.run();
 

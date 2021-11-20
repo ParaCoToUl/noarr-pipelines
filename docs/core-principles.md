@@ -119,10 +119,10 @@ In the code snippets above, we learned how to define hubs and compute nodes. The
 
 ```cpp
 noarr::pipelines::SimpleScheduler scheduler;
-scheduler.add(my_hub);
-scheduler.add(my_node);
-scheduler.add(my_other_hub);
-scheduler.add(my_other_node);
+scheduler << my_hub
+          << my_node
+          << my_other_hub
+          << my_other_node;
 
 // run the pipeline to completion
 scheduler.run();

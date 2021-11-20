@@ -225,12 +225,12 @@ void kmeans(
 
     // setup pipeline scheduler (give it all pipeline nodes)
     SimpleScheduler scheduler;
-    scheduler.add(points_hub);
-    scheduler.add(assignments_hub);
-    scheduler.add(centroids_hub);
-    scheduler.add(sums_hub);
-    scheduler.add(counts_hub);
-    scheduler.add(iterator);
+    scheduler << points_hub
+              << assignments_hub
+              << centroids_hub
+              << sums_hub
+              << counts_hub
+              << iterator;
 
     if (std::is_same<PointList, PointListAoS>()) {
         std::cout << "Running kmeans in AoS mode" << std::endl;
